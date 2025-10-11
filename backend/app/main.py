@@ -8,6 +8,7 @@ from jose import JWTError, jwt
 from typing import Annotated
 
 from . import crud, models, schemas, security
+from . import audit
 from .database import engine, get_db
 
 # Crea las tablas en la base de datos si no existen
@@ -89,35 +90,140 @@ async def register_user(request: Request, user: schemas.UserCreate, db: Session 
     
     db_user = crud.get_user_by_email(db, email=user.email)
     if db_user:
+        audit.log_event(
+            action='register_attempt',
+            user_id=user.email,  # Usamos el email porque el ID de usuario aún no existe
+            status='FAILED',
+            details='Attempt to register with an already existing email',
+            source_ip=request.client.host if request.client else None,
+            user_agent=request.headers.get('user-agent'),
+            masked_data=True,
+        )
         raise HTTPException(status_code=400, detail="Email already registered")
-    return crud.create_user(db=db, user=user)
+    
+    try:
+        created_user = crud.create_user(db=db, user=user)
+        audit.log_event(
+            action='register',
+            user_id=str(created_user.id),
+            status='SUCCESS',
+            details='User registered successfully',
+            source_ip=request.client.host if request.client else None,
+            user_agent=request.headers.get('user-agent'),
+            masked_data=False,
+        )
+        return created_user
+    except Exception as e:
+        # Log de error si la creación del usuario falla por alguna razón
+        audit.log_event(
+            action='register_attempt',
+            user_id=user.email,
+            status='FAILED',
+            details=f'User creation failed: {e}',
+            source_ip=request.client.host if request.client else None,
+            user_agent=request.headers.get('user-agent'),
+            masked_data=True,
+        )
+        # Re-lanzar la excepción para que FastAPI la maneje
+        raise HTTPException(status_code=500, detail="Could not create user.")
 
 @app.post("/token", response_model=schemas.Token)
 def login_for_access_token(
-    form_data: Annotated[OAuth2PasswordRequestForm, Depends()], 
+    form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
+    request: Request,
     db: Session = Depends(get_db)
 ):
     user = crud.get_user_by_email(db, email=form_data.username)
     if not user or not security.verify_password(form_data.password, user.hashed_password):
-        if user: # Si el usuario existe pero la contraseña es incorrecta
+        source_ip = request.client.host if request.client else None
+        user_agent = request.headers.get('user-agent')
+
+        if user:  # Si el usuario existe pero la contraseña es incorrecta
             user.failed_login_attempts += 1
-            if user.failed_login_attempts >= 5:
+            # Si alcanza 3 intentos fallidos, bloquear la cuenta y devolver mensaje específico
+            if user.failed_login_attempts >= 3:
                 user.account_status = 'locked'
+                db.commit()
+                # Registrar evento de auditoría: cuenta bloqueada
+                audit.log_event(
+                    action='login_attempt',
+                    user_id=str(user.id),
+                    status='FAILED_LOCKED',
+                    details=f'User locked after failed attempts',
+                    source_ip=source_ip,
+                    user_agent=user_agent,
+                    masked_data=True,
+                )
+                raise HTTPException(
+                    status_code=400,
+                    detail="Cuenta bloqueada",
+                )
             db.commit()
+
+            # Registrar intento fallido normal
+            audit.log_event(
+                action='login_attempt',
+                user_id=str(user.id),
+                status='FAILED',
+                details=f'Incorrect password, attempt {user.failed_login_attempts}',
+                source_ip=source_ip,
+                user_agent=user_agent,
+                masked_data=True,
+            )
+
+        # Mensaje genérico para evitar enumeración de usuarios
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Incorrect email or password",
+            detail="Correo o contraseña incorrectos",
             headers={"WWW-Authenticate": "Bearer"},
         )
     
     if user.account_status != 'active':
-        raise HTTPException(status_code=400, detail="Account is locked")
+        source_ip = None
+        user_agent = None
+        # Intentamos leer datos del request si están disponibles (no en todos los paths)
+        try:
+            # `request` estará disponible en este scope because it's a param earlier
+            source_ip = request.client.host if request.client else None
+            user_agent = request.headers.get('user-agent')
+        except Exception:
+            pass
+
+        audit.log_event(
+            action='login_attempt',
+            user_id=str(user.id),
+            status='FAILED_LOCKED',
+            details='Login attempt on locked account',
+            source_ip=source_ip,
+            user_agent=user_agent,
+            masked_data=True,
+        )
+
+        # Devolver mensaje en español para que el frontend pueda mostrar "Cuenta bloqueada"
+        raise HTTPException(status_code=400, detail="Cuenta bloqueada")
     
     # Resetear intentos fallidos en login exitoso
     user.failed_login_attempts = 0
     db.commit()
     
     access_token = security.create_access_token(data={"sub": user.email})
+    # Registrar evento de auditoría: login exitoso
+    try:
+        source_ip = request.client.host if request.client else None
+        user_agent = request.headers.get('user-agent')
+    except Exception:
+        source_ip = None
+        user_agent = None
+
+    audit.log_event(
+        action='login',
+        user_id=str(user.id),
+        status='SUCCESS',
+        details='User logged in successfully',
+        source_ip=source_ip,
+        user_agent=user_agent,
+        masked_data=False,
+    )
     return {"access_token": access_token, "token_type": "bearer"}
 
 @app.get("/users/me/", response_model=schemas.User)
