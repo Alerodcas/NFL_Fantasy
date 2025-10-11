@@ -6,7 +6,7 @@ CREATE TABLE IF NOT EXISTS users (
     hashed_password VARCHAR(255) NOT NULL,
     profile_image_url VARCHAR(255) DEFAULT 'default_profile.png',
     language VARCHAR(10) DEFAULT 'en',
-    role VARCHAR(20) DEFAULT 'manager',
+    role VARCHAR(20) DEFAULT 'espectador',
     account_status VARCHAR(20) DEFAULT 'active',
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     failed_login_attempts INTEGER DEFAULT 0
