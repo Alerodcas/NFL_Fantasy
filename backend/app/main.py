@@ -9,6 +9,8 @@ from typing import Annotated
 
 from . import crud, models, schemas, security
 from .database import engine, get_db
+from .schemas import TeamCreate, Team
+from sqlalchemy import text
 
 # Crea las tablas en la base de datos si no existen
 models.Base.metadata.create_all(bind=engine)
@@ -140,3 +142,77 @@ def update_user_me(
     db.commit()
     db.refresh(current_user)
     return current_user
+
+# --- Helpers internos para Teams ---
+def _ensure_manager_or_above(current_user):
+    # Usa el mismo campo 'role'
+    role = getattr(current_user, "role", None)
+    if role not in ("manager", "admin", "owner"):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Insufficient role"
+        )
+
+def _assert_league_exists(db: Session, league_id: int):
+    row = db.execute(
+        text("SELECT 1 FROM leagues WHERE id = :lid"),
+        {"lid": league_id}
+    ).first()
+    if not row:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="League not found")
+
+
+# --- Feature 3.1: Crear Equipo ---
+@app.post("/teams", response_model=Team, status_code=status.HTTP_201_CREATED, tags=["teams"])
+def create_team(
+    payload: TeamCreate,
+    current_user: Annotated[models.User, Depends(get_current_user)],
+    db: Session = Depends(get_db)
+):
+    # 1) Permisos: solo manager+ crea equipo
+    _ensure_manager_or_above(current_user)
+
+    # 2) Integridad: la liga debe existir
+    _assert_league_exists(db, payload.league_id)
+
+    # 3) Unicidad: nombre único dentro de la liga
+    exists = db.execute(
+    text("SELECT 1 FROM teams WHERE league_id = :lid AND name = :nm"),
+    {"lid": payload.league_id, "nm": payload.name}
+).first()
+
+
+    if exists:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Team name already used in this league"
+        )
+
+    # 4) Insertar y devolver el equipo creado
+    result = db.execute(
+    text("""
+        INSERT INTO teams (league_id, owner_user_id, name, description, logo_url)
+        VALUES (:lid, :owner, :name, :desc, :logo)
+        RETURNING id, league_id, owner_user_id, name, description, logo_url, created_at
+    """),
+    {
+        "lid": payload.league_id,
+        "owner": current_user.id,
+        "name": payload.name,
+        "desc": payload.description,
+        "logo": str(payload.logo_url) if payload.logo_url else None,
+    }
+)
+
+
+    db.commit()
+    row = result.first()
+    return {
+        "id": row.id,
+        "league_id": row.league_id,
+        "owner_user_id": row.owner_user_id,
+        "name": row.name,
+        "description": row.description,
+        "logo_url": row.logo_url,
+        "created_at": row.created_at,
+    }
