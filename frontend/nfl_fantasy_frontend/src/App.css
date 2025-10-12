@@ -1,8 +1,8 @@
 #root {
-  max-width: 1280px;
+  width: 100%;
   margin: 0 auto;
-  padding: 2rem;
-  text-align: center;
+  /* padding: 2rem; Eliminar el padding para permitir que los componentes controlen su propio espacio */
+  /* text-align: center; Los componentes deben manejar su propia alineación de texto */
 }
 
 .logo {

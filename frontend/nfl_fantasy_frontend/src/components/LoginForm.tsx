@@ -37,14 +37,14 @@ const LoginForm = () => {
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
-      backgroundColor: '#f5f5f5',
+      backgroundColor: '#1a202c', // Dark theme background
       padding: '20px'
     }}>
       <div style={{
-        backgroundColor: 'white',
+        backgroundColor: '#2d3748', // Dark component background
         padding: '40px',
         borderRadius: '12px',
-        boxShadow: '0 4px 20px rgba(0, 0, 0, 0.1)',
+        boxShadow: '0 4px 20px rgba(0, 0, 0, 0.2)',
         width: '100%',
         maxWidth: '400px'
       }}>
@@ -52,7 +52,7 @@ const LoginForm = () => {
           <h2 style={{
             textAlign: 'center',
             marginBottom: '30px',
-            color: '#333',
+            color: '#e2e8f0', // Light text
             fontSize: '28px',
             fontWeight: '600'
           }}>
@@ -61,12 +61,12 @@ const LoginForm = () => {
           
           {error && (
             <div style={{
-              backgroundColor: '#fee',
-              color: '#c33',
+              backgroundColor: 'rgba(255, 100, 100, 0.1)',
+              color: '#ff8a8a',
               padding: '12px',
               borderRadius: '6px',
               marginBottom: '20px',
-              border: '1px solid #fcc'
+              border: '1px solid #c33'
             }}>
               {error}
             </div>
@@ -77,7 +77,7 @@ const LoginForm = () => {
               display: 'block',
               marginBottom: '8px',
               fontWeight: '500',
-              color: '#555'
+              color: '#a0aec0' // Lighter gray text
             }}>
               Email:
             </label>
@@ -89,14 +89,16 @@ const LoginForm = () => {
               style={{
                 width: '100%',
                 padding: '12px',
-                border: '2px solid #ddd',
+                border: '2px solid #4a5568',
                 borderRadius: '6px',
                 fontSize: '16px',
                 transition: 'border-color 0.3s',
-                outline: 'none'
+                outline: 'none',
+                backgroundColor: '#1a202c',
+                color: '#e2e8f0'
               }}
-              onFocus={(e) => e.target.style.borderColor = '#007bff'}
-              onBlur={(e) => e.target.style.borderColor = '#ddd'}
+              onFocus={(e) => e.target.style.borderColor = '#63b3ed'}
+              onBlur={(e) => e.target.style.borderColor = '#4a5568'}
             />
           </div>
 
@@ -105,7 +107,7 @@ const LoginForm = () => {
               display: 'block',
               marginBottom: '8px',
               fontWeight: '500',
-              color: '#555'
+              color: '#a0aec0' // Lighter gray text
             }}>
               Contraseña:
             </label>
@@ -117,14 +119,16 @@ const LoginForm = () => {
               style={{
                 width: '100%',
                 padding: '12px',
-                border: '2px solid #ddd',
+                border: '2px solid #4a5568',
                 borderRadius: '6px',
                 fontSize: '16px',
                 transition: 'border-color 0.3s',
-                outline: 'none'
+                outline: 'none',
+                backgroundColor: '#1a202c',
+                color: '#e2e8f0'
               }}
-              onFocus={(e) => e.target.style.borderColor = '#007bff'}
-              onBlur={(e) => e.target.style.borderColor = '#ddd'}
+              onFocus={(e) => e.target.style.borderColor = '#63b3ed'}
+              onBlur={(e) => e.target.style.borderColor = '#4a5568'}
             />
           </div>
 
@@ -134,8 +138,8 @@ const LoginForm = () => {
             style={{
               width: '100%',
               padding: '14px',
-              backgroundColor: loading ? '#ccc' : '#007bff',
-              color: 'white',
+              backgroundColor: loading ? '#4a5568' : '#63b3ed',
+              color: loading ? '#a0aec0' : '#1a202c',
               border: 'none',
               borderRadius: '6px',
               fontSize: '16px',
@@ -144,26 +148,20 @@ const LoginForm = () => {
               transition: 'background-color 0.3s',
               marginBottom: '20px'
             }}
-            onMouseOver={(e) => {
-              if (!loading) (e.target as HTMLButtonElement).style.backgroundColor = '#0056b3';
-            }}
-            onMouseOut={(e) => {
-              if (!loading) (e.target as HTMLButtonElement).style.backgroundColor = '#007bff';
-            }}
           >
             {loading ? 'Iniciando sesión...' : 'Entrar'}
           </button>
 
           <p style={{
             textAlign: 'center',
-            color: '#666',
+            color: '#a0aec0',
             margin: '0'
           }}>
             ¿No tienes cuenta?{' '}
             <Link
               to="/register"
               style={{
-                color: '#007bff',
+                color: '#63b3ed',
                 textDecoration: 'none',
                 fontWeight: '500'
               }}
