@@ -33,6 +33,10 @@ const ProfilePage = () => {
     navigate('/login');
   };
 
+  const handleCreateTeam = () => {
+    navigate('/teams/new');
+  };
+
   return (
     <div style={{
       minHeight: '100vh',
@@ -211,6 +215,24 @@ const ProfilePage = () => {
               </p>
             </div>
           </div>
+
+            <button
+            onClick={handleCreateTeam}
+            style={{
+              width: '100%',
+              padding: '14px',
+              backgroundColor: '#63b3ed',
+              color: 'white',
+              border: 'none',
+              borderRadius: '6px',
+              fontSize: '16px',
+              fontWeight: '600',
+              cursor: 'pointer',
+              transition: 'background-color 0.3s'
+            }}
+          >
+            Crear Equipo
+          </button>
 
           <button
             onClick={handleLogout}
