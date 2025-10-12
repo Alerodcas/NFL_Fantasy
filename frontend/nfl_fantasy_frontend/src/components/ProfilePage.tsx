@@ -1,6 +1,8 @@
 import React from 'react';
 import { useAuth } from '../hooks/useAuth';
 import { useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
+
 
 const ProfilePage = () => {
   const { user, logout } = useAuth();
@@ -27,6 +29,10 @@ const ProfilePage = () => {
       </div>
     );
   }
+
+  const handleCreateTeam = () => {
+    navigate('/teams/new');
+  };
 
   const handleLogout = () => {
     logout();
@@ -208,25 +214,48 @@ const ProfilePage = () => {
             </div>
           </div>
 
-          <button
-            onClick={handleLogout}
-            style={{
-              width: '100%',
-              padding: '14px',
-              backgroundColor: '#dc3545',
-              color: 'white',
-              border: 'none',
-              borderRadius: '6px',
-              fontSize: '16px',
-              fontWeight: '600',
-              cursor: 'pointer',
-              transition: 'background-color 0.3s'
-            }}
-            onMouseOver={(e) => (e.target as HTMLButtonElement).style.backgroundColor = '#c82333'}
-            onMouseOut={(e) => (e.target as HTMLButtonElement).style.backgroundColor = '#dc3545'}
-          >
-            Cerrar Sesión
-          </button>
+            {/* Botón para crear equipo */}
+            <button
+              onClick={handleCreateTeam}
+              style={{
+                width: '100%',
+                padding: '14px',
+                backgroundColor: '#007bff',
+                color: 'white',
+                border: 'none',
+                borderRadius: '6px',
+                fontSize: '16px',
+                fontWeight: '600',
+                cursor: 'pointer',
+                transition: 'background-color 0.3s',
+                marginBottom: '15px'
+              }}
+              onMouseOver={(e) => (e.target as HTMLButtonElement).style.backgroundColor = '#0056b3'}
+              onMouseOut={(e) => (e.target as HTMLButtonElement).style.backgroundColor = '#007bff'}
+            >
+              Crear Equipo
+            </button>
+
+            {/* Botón para cerrar sesión */}
+            <button
+              onClick={handleLogout}
+              style={{
+                width: '100%',
+                padding: '14px',
+                backgroundColor: '#dc3545',
+                color: 'white',
+                border: 'none',
+                borderRadius: '6px',
+                fontSize: '16px',
+                fontWeight: '600',
+                cursor: 'pointer',
+                transition: 'background-color 0.3s'
+              }}
+              onMouseOver={(e) => (e.target as HTMLButtonElement).style.backgroundColor = '#c82333'}
+              onMouseOut={(e) => (e.target as HTMLButtonElement).style.backgroundColor = '#dc3545'}
+            >
+              Cerrar Sesión
+            </button>
         </div>
       </div>
     </div>

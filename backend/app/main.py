@@ -173,14 +173,22 @@ def create_team(
     _ensure_manager_or_above(current_user)
 
     # 2) Integridad: la liga debe existir
-    _assert_league_exists(db, payload.league_id)
+    league_exists = db.execute(
+        text("SELECT 1 FROM leagues WHERE id = :lid"),
+        {"lid": payload.league_id}
+    ).first()
+
+    if not league_exists:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"League with ID {payload.league_id} not found"
+        )
 
     # 3) Unicidad: nombre único dentro de la liga
     exists = db.execute(
-    text("SELECT 1 FROM teams WHERE league_id = :lid AND name = :nm"),
-    {"lid": payload.league_id, "nm": payload.name}
-).first()
-
+        text("SELECT 1 FROM teams WHERE league_id = :lid AND name = :nm"),
+        {"lid": payload.league_id, "nm": payload.name}
+    ).first()
 
     if exists:
         raise HTTPException(
@@ -190,20 +198,19 @@ def create_team(
 
     # 4) Insertar y devolver el equipo creado
     result = db.execute(
-    text("""
-        INSERT INTO teams (league_id, owner_user_id, name, description, logo_url)
-        VALUES (:lid, :owner, :name, :desc, :logo)
-        RETURNING id, league_id, owner_user_id, name, description, logo_url, created_at
-    """),
-    {
-        "lid": payload.league_id,
-        "owner": current_user.id,
-        "name": payload.name,
-        "desc": payload.description,
-        "logo": str(payload.logo_url) if payload.logo_url else None,
-    }
-)
-
+        text("""
+            INSERT INTO teams (league_id, owner_user_id, name, description, logo_url)
+            VALUES (:lid, :owner, :name, :desc, :logo)
+            RETURNING id, league_id, owner_user_id, name, description, logo_url, created_at
+        """),
+        {
+            "lid": payload.league_id,
+            "owner": current_user.id,
+            "name": payload.name,
+            "desc": payload.description,
+            "logo": str(payload.logo_url) if payload.logo_url else None,
+        }
+    )
 
     db.commit()
     row = result.first()

@@ -3,14 +3,19 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import RegisterForm from './components/RegisterForm';
 import LoginForm from './components/LoginForm';
 import ProfilePage from './components/ProfilePage';
+import TeamForm from './components/TeamForm';
 import { AuthProvider } from './context/AuthContext';
 import { useAuth } from './hooks/useAuth';
 
 // Componente para proteger rutas que requieren autenticación
 const PrivateRoute = ({ children }: { children: ReactNode }) => {
   const { token } = useAuth();
-  return token ? children : <Navigate to="/login" />;
+  // use the same localStorage key used by AuthContext/login ("token")
+  const stored = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+  const effectiveToken = token || stored;
+  return effectiveToken ? children : <Navigate to="/login" />;
 };
+
 
 function App() {
   return (
@@ -24,6 +29,15 @@ function App() {
             element={
               <PrivateRoute>
                 <ProfilePage />
+              </PrivateRoute>
+            }
+          />
+        
+          <Route
+            path="/teams/new"
+            element={
+              <PrivateRoute>
+                <TeamForm />
               </PrivateRoute>
             }
           />

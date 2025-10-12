@@ -41,10 +41,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     fetchUser();
   }, [token]);
 
+
+  useEffect(() => {
+    const saved = localStorage.getItem('token');
+    if (saved) setToken(saved);
+  }, []);
+
   const login = (newToken: string) => {
-    localStorage.setItem('token', newToken);
     setToken(newToken);
+    localStorage.setItem('token', newToken); 
   };
+
 
   const logout = () => {
     localStorage.removeItem('token');
