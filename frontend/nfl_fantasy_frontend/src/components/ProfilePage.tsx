@@ -36,21 +36,25 @@ const ProfilePage = () => {
   return (
     <div style={{
       minHeight: '100vh',
-      backgroundColor: '#f5f5f5',
-      padding: '20px'
+      backgroundColor: '#1a202c', // Dark theme background
+      padding: '20px',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center'
     }}>
       <div style={{
+        width: '100%',
         maxWidth: '600px',
         margin: '0 auto',
-        backgroundColor: 'white',
+        backgroundColor: '#2d3748', // Dark component background
         borderRadius: '12px',
-        boxShadow: '0 4px 20px rgba(0, 0, 0, 0.1)',
+        boxShadow: '0 4px 20px rgba(0, 0, 0, 0.2)',
         overflow: 'hidden'
       }}>
         {/* Header */}
         <div style={{
-          backgroundColor: '#007bff',
-          color: 'white',
+          backgroundColor: '#4a5568', // A mid-tone blue-gray
+          color: '#e2e8f0',
           padding: '30px',
           textAlign: 'center'
         }}>
@@ -79,14 +83,14 @@ const ProfilePage = () => {
           }}>
             <div style={{
               padding: '20px',
-              backgroundColor: '#f8f9fa',
+              backgroundColor: '#1a202c',
               borderRadius: '8px',
-              border: '1px solid #e9ecef'
+              border: '1px solid #4a5568'
             }}>
               <label style={{
                 display: 'block',
                 fontWeight: '600',
-                color: '#495057',
+                color: '#a0aec0',
                 marginBottom: '8px',
                 fontSize: '14px',
                 textTransform: 'uppercase',
@@ -97,7 +101,7 @@ const ProfilePage = () => {
               <p style={{
                 margin: '0',
                 fontSize: '18px',
-                color: '#212529'
+                color: '#e2e8f0'
               }}>
                 {user.id}
               </p>
@@ -105,14 +109,14 @@ const ProfilePage = () => {
 
             <div style={{
               padding: '20px',
-              backgroundColor: '#f8f9fa',
+              backgroundColor: '#1a202c',
               borderRadius: '8px',
-              border: '1px solid #e9ecef'
+              border: '1px solid #4a5568'
             }}>
               <label style={{
                 display: 'block',
                 fontWeight: '600',
-                color: '#495057',
+                color: '#a0aec0',
                 marginBottom: '8px',
                 fontSize: '14px',
                 textTransform: 'uppercase',
@@ -123,7 +127,7 @@ const ProfilePage = () => {
               <p style={{
                 margin: '0',
                 fontSize: '18px',
-                color: '#212529'
+                color: '#e2e8f0'
               }}>
                 {user.name}
               </p>
@@ -131,14 +135,14 @@ const ProfilePage = () => {
 
             <div style={{
               padding: '20px',
-              backgroundColor: '#f8f9fa',
+              backgroundColor: '#1a202c',
               borderRadius: '8px',
-              border: '1px solid #e9ecef'
+              border: '1px solid #4a5568'
             }}>
               <label style={{
                 display: 'block',
                 fontWeight: '600',
-                color: '#495057',
+                color: '#a0aec0',
                 marginBottom: '8px',
                 fontSize: '14px',
                 textTransform: 'uppercase',
@@ -149,7 +153,7 @@ const ProfilePage = () => {
               <p style={{
                 margin: '0',
                 fontSize: '18px',
-                color: '#212529'
+                color: '#e2e8f0'
               }}>
                 {user.email}
               </p>
@@ -157,14 +161,14 @@ const ProfilePage = () => {
 
             <div style={{
               padding: '20px',
-              backgroundColor: '#f8f9fa',
+              backgroundColor: '#1a202c',
               borderRadius: '8px',
-              border: '1px solid #e9ecef'
+              border: '1px solid #4a5568'
             }}>
               <label style={{
                 display: 'block',
                 fontWeight: '600',
-                color: '#495057',
+                color: '#a0aec0',
                 marginBottom: '8px',
                 fontSize: '14px',
                 textTransform: 'uppercase',
@@ -175,7 +179,7 @@ const ProfilePage = () => {
               <p style={{
                 margin: '0',
                 fontSize: '18px',
-                color: '#212529'
+                color: '#e2e8f0'
               }}>
                 {user.alias}
               </p>
@@ -183,14 +187,14 @@ const ProfilePage = () => {
 
             <div style={{
               padding: '20px',
-              backgroundColor: '#f8f9fa',
+              backgroundColor: '#1a202c',
               borderRadius: '8px',
-              border: '1px solid #e9ecef'
+              border: '1px solid #4a5568'
             }}>
               <label style={{
                 display: 'block',
                 fontWeight: '600',
-                color: '#495057',
+                color: '#a0aec0',
                 marginBottom: '8px',
                 fontSize: '14px',
                 textTransform: 'uppercase',
@@ -201,7 +205,7 @@ const ProfilePage = () => {
               <p style={{
                 margin: '0',
                 fontSize: '18px',
-                color: '#212529'
+                color: '#e2e8f0'
               }}>
                 {user.role}
               </p>
@@ -213,7 +217,7 @@ const ProfilePage = () => {
             style={{
               width: '100%',
               padding: '14px',
-              backgroundColor: '#dc3545',
+              backgroundColor: '#e53e3e', // A more vibrant red
               color: 'white',
               border: 'none',
               borderRadius: '6px',
@@ -222,8 +226,6 @@ const ProfilePage = () => {
               cursor: 'pointer',
               transition: 'background-color 0.3s'
             }}
-            onMouseOver={(e) => (e.target as HTMLButtonElement).style.backgroundColor = '#c82333'}
-            onMouseOut={(e) => (e.target as HTMLButtonElement).style.backgroundColor = '#dc3545'}
           >
             Cerrar Sesión
           </button>

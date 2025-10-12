@@ -101,27 +101,27 @@ const RegisterForm = () => {
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        backgroundColor: '#f5f5f5',
+        backgroundColor: '#1a202c',
         padding: '20px'
       }}>
         <div style={{
-          backgroundColor: 'white',
+          backgroundColor: '#2d3748',
           padding: '40px',
           borderRadius: '12px',
-          boxShadow: '0 4px 20px rgba(0, 0, 0, 0.1)',
+          boxShadow: '0 4px 20px rgba(0, 0, 0, 0.2)',
           width: '100%',
           maxWidth: '400px',
           textAlign: 'center'
         }}>
           <div style={{
-            backgroundColor: '#d4edda',
-            color: '#155724',
+            backgroundColor: 'rgba(100, 255, 100, 0.1)',
+            color: '#a8e6cf',
             padding: '20px',
             borderRadius: '6px',
-            border: '1px solid #c3e6cb'
+            border: '1px solid #63b3ed'
           }}>
-            <h2 style={{ margin: '0 0 10px 0' }}>¡Registro exitoso!</h2>
-            <p style={{ margin: '0' }}>Serás redirigido al login en unos segundos...</p>
+            <h2 style={{ margin: '0 0 10px 0', color: '#e2e8f0' }}>¡Registro exitoso!</h2>
+            <p style={{ margin: '0', color: '#a0aec0' }}>Serás redirigido al login en unos segundos...</p>
           </div>
         </div>
       </div>
@@ -134,14 +134,14 @@ const RegisterForm = () => {
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
-      backgroundColor: '#f5f5f5',
+      backgroundColor: '#1a202c',
       padding: '20px'
     }}>
       <div style={{
-        backgroundColor: 'white',
+        backgroundColor: '#2d3748',
         padding: '40px',
         borderRadius: '12px',
-        boxShadow: '0 4px 20px rgba(0, 0, 0, 0.1)',
+        boxShadow: '0 4px 20px rgba(0, 0, 0, 0.2)',
         width: '100%',
         maxWidth: '450px'
       }}>
@@ -149,7 +149,7 @@ const RegisterForm = () => {
           <h2 style={{
             textAlign: 'center',
             marginBottom: '30px',
-            color: '#333',
+            color: '#e2e8f0',
             fontSize: '28px',
             fontWeight: '600'
           }}>
@@ -158,12 +158,12 @@ const RegisterForm = () => {
           
           {error && (
             <div style={{
-              backgroundColor: '#fee',
-              color: '#c33',
+              backgroundColor: 'rgba(255, 100, 100, 0.1)',
+              color: '#ff8a8a',
               padding: '12px',
               borderRadius: '6px',
               marginBottom: '20px',
-              border: '1px solid #fcc'
+              border: '1px solid #c33'
             }}>
               {error}
             </div>
@@ -174,7 +174,7 @@ const RegisterForm = () => {
               display: 'block',
               marginBottom: '8px',
               fontWeight: '500',
-              color: '#555'
+              color: '#a0aec0'
             }}>
               Nombre completo:
             </label>
@@ -186,14 +186,16 @@ const RegisterForm = () => {
               style={{
                 width: '100%',
                 padding: '12px',
-                border: '2px solid #ddd',
+                border: '2px solid #4a5568',
                 borderRadius: '6px',
                 fontSize: '16px',
                 transition: 'border-color 0.3s',
-                outline: 'none'
+                outline: 'none',
+                backgroundColor: '#1a202c',
+                color: '#e2e8f0'
               }}
-              onFocus={(e) => (e.target as HTMLInputElement).style.borderColor = '#28a745'}
-              onBlur={(e) => (e.target as HTMLInputElement).style.borderColor = '#ddd'}
+              onFocus={(e) => (e.target as HTMLInputElement).style.borderColor = '#63b3ed'}
+              onBlur={(e) => (e.target as HTMLInputElement).style.borderColor = '#4a5568'}
             />
           </div>
 
@@ -202,7 +204,7 @@ const RegisterForm = () => {
               display: 'block',
               marginBottom: '8px',
               fontWeight: '500',
-              color: '#555'
+              color: '#a0aec0'
             }}>
               Email:
             </label>
@@ -214,14 +216,16 @@ const RegisterForm = () => {
               style={{
                 width: '100%',
                 padding: '12px',
-                border: '2px solid #ddd',
+                border: '2px solid #4a5568',
                 borderRadius: '6px',
                 fontSize: '16px',
                 transition: 'border-color 0.3s',
-                outline: 'none'
+                outline: 'none',
+                backgroundColor: '#1a202c',
+                color: '#e2e8f0'
               }}
-              onFocus={(e) => (e.target as HTMLInputElement).style.borderColor = '#28a745'}
-              onBlur={(e) => (e.target as HTMLInputElement).style.borderColor = '#ddd'}
+              onFocus={(e) => (e.target as HTMLInputElement).style.borderColor = '#63b3ed'}
+              onBlur={(e) => (e.target as HTMLInputElement).style.borderColor = '#4a5568'}
             />
           </div>
 
@@ -230,7 +234,7 @@ const RegisterForm = () => {
               display: 'block',
               marginBottom: '8px',
               fontWeight: '500',
-              color: '#555'
+              color: '#a0aec0'
             }}>
               Alias:
             </label>
@@ -242,14 +246,16 @@ const RegisterForm = () => {
               style={{
                 width: '100%',
                 padding: '12px',
-                border: '2px solid #ddd',
+                border: '2px solid #4a5568',
                 borderRadius: '6px',
                 fontSize: '16px',
                 transition: 'border-color 0.3s',
-                outline: 'none'
+                outline: 'none',
+                backgroundColor: '#1a202c',
+                color: '#e2e8f0'
               }}
-              onFocus={(e) => (e.target as HTMLInputElement).style.borderColor = '#28a745'}
-              onBlur={(e) => (e.target as HTMLInputElement).style.borderColor = '#ddd'}
+              onFocus={(e) => (e.target as HTMLInputElement).style.borderColor = '#63b3ed'}
+              onBlur={(e) => (e.target as HTMLInputElement).style.borderColor = '#4a5568'}
             />
           </div>
 
@@ -258,7 +264,7 @@ const RegisterForm = () => {
               display: 'block',
               marginBottom: '8px',
               fontWeight: '500',
-              color: '#555'
+              color: '#a0aec0'
             }}>
               Contraseña:
             </label>
@@ -273,17 +279,19 @@ const RegisterForm = () => {
               style={{
                 width: '100%',
                 padding: '12px',
-                border: '2px solid #ddd',
+                border: '2px solid #4a5568',
                 borderRadius: '6px',
                 fontSize: '16px',
                 transition: 'border-color 0.3s',
-                outline: 'none'
+                outline: 'none',
+                backgroundColor: '#1a202c',
+                color: '#e2e8f0'
               }}
-              onFocus={(e) => (e.target as HTMLInputElement).style.borderColor = '#28a745'}
-              onBlur={(e) => (e.target as HTMLInputElement).style.borderColor = '#ddd'}
+              onFocus={(e) => (e.target as HTMLInputElement).style.borderColor = '#63b3ed'}
+              onBlur={(e) => (e.target as HTMLInputElement).style.borderColor = '#4a5568'}
             />
             <small style={{
-              color: '#666',
+              color: '#a0aec0',
               fontSize: '12px',
               marginTop: '4px',
               display: 'block'
@@ -297,7 +305,7 @@ const RegisterForm = () => {
               display: 'block',
               marginBottom: '8px',
               fontWeight: '500',
-              color: '#555'
+              color: '#a0aec0'
             }}>
               Confirmar contraseña:
             </label>
@@ -312,14 +320,16 @@ const RegisterForm = () => {
               style={{
                 width: '100%',
                 padding: '12px',
-                border: '2px solid #ddd',
+                border: '2px solid #4a5568',
                 borderRadius: '6px',
                 fontSize: '16px',
                 transition: 'border-color 0.3s',
-                outline: 'none'
+                outline: 'none',
+                backgroundColor: '#1a202c',
+                color: '#e2e8f0'
               }}
-              onFocus={(e) => (e.target as HTMLInputElement).style.borderColor = '#28a745'}
-              onBlur={(e) => (e.target as HTMLInputElement).style.borderColor = '#ddd'}
+              onFocus={(e) => (e.target as HTMLInputElement).style.borderColor = '#63b3ed'}
+              onBlur={(e) => (e.target as HTMLInputElement).style.borderColor = '#4a5568'}
             />
           </div>
 
@@ -329,8 +339,8 @@ const RegisterForm = () => {
             style={{
               width: '100%',
               padding: '14px',
-              backgroundColor: loading ? '#ccc' : '#28a745',
-              color: 'white',
+              backgroundColor: loading ? '#4a5568' : '#63b3ed',
+              color: loading ? '#a0aec0' : '#1a202c',
               border: 'none',
               borderRadius: '6px',
               fontSize: '16px',
@@ -339,26 +349,20 @@ const RegisterForm = () => {
               transition: 'background-color 0.3s',
               marginBottom: '20px'
             }}
-            onMouseOver={(e) => {
-              if (!loading) (e.target as HTMLButtonElement).style.backgroundColor = '#218838';
-            }}
-            onMouseOut={(e) => {
-              if (!loading) (e.target as HTMLButtonElement).style.backgroundColor = '#28a745';
-            }}
           >
             {loading ? 'Registrando...' : 'Registrarse'}
           </button>
 
           <p style={{
             textAlign: 'center',
-            color: '#666',
+            color: '#a0aec0',
             margin: '0'
           }}>
             ¿Ya tienes cuenta?{' '}
             <Link
               to="/login"
               style={{
-                color: '#28a745',
+                color: '#63b3ed',
                 textDecoration: 'none',
                 fontWeight: '500'
               }}
