@@ -1,273 +1,361 @@
-import React, { useState } from 'react';
-import { useAuth } from '../../../shared/hooks/useAuth';
-import { useNavigate, Link } from 'react-router-dom';
-import api from '../../../services/apiService';
+// src/features/teams/CreateTeam.tsx
+import { useState, useRef } from "react";
+import { useNavigate, Link } from "react-router-dom";
+import { createTeamJson, createTeamUpload } from "../../../services/teams";
 
-const TeamForm = () => {
-	const [name, setName] = useState('');
-	const [leagueId, setLeagueId] = useState<number>(1); // cambia si quieres
-	const [description, setDescription] = useState('');
-	const [logoUrl, setLogoUrl] = useState('');
-	const [error, setError] = useState('');
-	const [loading, setLoading] = useState(false);
+type Mode = "url" | "upload";
 
-	const auth = useAuth();
-	const navigate = useNavigate();
+export default function CreateTeam() {
+  const nav = useNavigate();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [mode, setMode] = useState<Mode>("url");
+  const [name, setName] = useState("");
+  const [city, setCity] = useState("");
+  const [imageUrl, setImageUrl] = useState("");
+  const [file, setFile] = useState<File | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
 
-	const handleSubmit = async (e: React.FormEvent) => {
-		e.preventDefault();
-		setLoading(true);
-		setError('');
+  const handleFileButtonClick = () => {
+    fileInputRef.current?.click();
+  };
 
-		if (!name.trim() || name.trim().length < 3) {
-			setError('El nombre debe tener al menos 3 caracteres.');
-			setLoading(false);
-			return;
-		}
-		if (!leagueId || leagueId <= 0) {
-			setError('Debes indicar un league_id válido.');
-			setLoading(false);
-			return;
-		}
+  async function onSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setError(null);
 
-		try {
-			const payload = {
-				name: name.trim(),
-				description: description || undefined,
-				logo_url: logoUrl || undefined,
-				league_id: leagueId,
-			};
+    if (name.trim().length < 2 || city.trim().length < 2) {
+      setError("Name and city must be at least 2 characters.");
+      return;
+    }
+    if (mode === "upload" && !file) {
+      setError("Please select an image file.");
+      return;
+    }
 
-			// rely on apiService request interceptor to add Authorization header
-			const resp = await api.post('/teams', payload);
+    try {
+      setSubmitting(true);
+      const team =
+        mode === "url"
+          ? await createTeamJson({
+              name: name.trim(),
+              city: city.trim(),
+              image_url: imageUrl.trim() || undefined,
+            })
+          : await createTeamUpload({
+              name: name.trim(),
+              city: city.trim(),
+              file: file as File,
+            });
 
-			// Éxito
-			alert('Equipo creado con éxito');
-			// Navega por ahora al perfil:
-			navigate('/profile');
+      // show success and redirect to profile after a short delay
+      setSuccess('Equipo creado exitosamente. Redirigiendo al perfil...');
+      setTimeout(() => {
+        nav('/profile');
+      }, 1300);
+    } catch (e: any) {
+      if (e?.response?.status === 409) setError("A team with that name already exists.");
+      else if (e?.response?.status === 422) setError("Please check required fields.");
+      else setError(e?.message || "Failed to create team.");
+    } finally {
+      setSubmitting(false);
+    }
+  }
 
-		} catch (err: any) {
-			const msg =
-				err?.response?.data?.detail ||
-				err?.message ||
-				'Error al crear el equipo.';
-			setError(String(msg));
-		} finally {
-			setLoading(false);
-		}
-	};
+  return (
+    <div style={{
+      minHeight: '100vh',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundColor: '#1a202c',
+      padding: '20px'
+    }}>
+      <div style={{
+        backgroundColor: '#2d3748',
+        padding: '40px',
+        borderRadius: '12px',
+        boxShadow: '0 4px 20px rgba(0, 0, 0, 0.2)',
+        width: '100%',
+        maxWidth: '600px'
+      }}>
+        <form onSubmit={onSubmit}>
+          <h2 style={{
+            textAlign: 'center',
+            marginBottom: '30px',
+            color: '#e2e8f0',
+            fontSize: '28px',
+            fontWeight: '600'
+          }}>
+            Create Team
+          </h2>
 
-	return (
 		<div style={{
-			minHeight: '100vh',
-			display: 'flex',
-			alignItems: 'center',
-			justifyContent: 'center',
-			backgroundColor: '#f5f5f5',
-			padding: '20px'
-		}}>
-			<div style={{
-				backgroundColor: 'white',
-				padding: '40px',
-				borderRadius: '12px',
-				boxShadow: '0 4px 20px rgba(0, 0, 0, 0.1)',
-				width: '100%',
-				maxWidth: '500px'
-			}}>
-				<form onSubmit={handleSubmit}>
-					<h2 style={{
-						textAlign: 'center',
-						marginBottom: '30px',
-						color: '#333',
-						fontSize: '28px',
-						fontWeight: '600'
-					}}>
-						Crear Equipo
-					</h2>
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          marginBottom: '20px'
+        }}>
+          <Link
+            to="/profile"
+            style={{
+              padding: '8px 16px',
+              backgroundColor: '#2d3748',
+              color: '#e2e8f0',
+              border: '2px solid #4a5568',
+              borderRadius: '6px',
+              textDecoration: 'none',
+              fontSize: '16px',
+              transition: 'all 0.3s',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px'
+            }}
+            onMouseOver={(e) => e.currentTarget.style.borderColor = '#63b3ed'}
+            onMouseOut={(e) => e.currentTarget.style.borderColor = '#4a5568'}
+          >
+            ← Back to Profile
+          </Link>
+        </div>
 
-					{error && (
-						<div style={{
-							backgroundColor: '#fee',
-							color: '#c33',
-							padding: '12px',
-							borderRadius: '6px',
-							marginBottom: '20px',
-							border: '1px solid #fcc'
-						}}>
-							{error}
-						</div>
-					)}
+          {error && (
+            <div style={{
+              backgroundColor: 'rgba(255, 100, 100, 0.1)',
+              color: '#ff8a8a',
+              padding: '12px',
+              borderRadius: '6px',
+              marginBottom: '20px',
+              border: '1px solid #c33'
+            }}>
+              {error}
+            </div>
+          )}
 
-					<div style={{ marginBottom: '20px' }}>
-						<label style={{
-							display: 'block',
-							marginBottom: '8px',
-							fontWeight: '500',
-							color: '#555'
-						}}>
-							Nombre*:
-						</label>
-						<input
-							type="text"
-							value={name}
-							onChange={(e) => setName(e.target.value)}
-							required
-							minLength={3}
-							style={{
-								width: '100%',
-								padding: '12px',
-								border: '2px solid #ddd',
-								borderRadius: '6px',
-								fontSize: '16px',
-								transition: 'border-color 0.3s',
-								outline: 'none'
-							}}
-							onFocus={(e) => e.currentTarget.style.borderColor = '#007bff'}
-							onBlur={(e) => e.currentTarget.style.borderColor = '#ddd'}
-						/>
-					</div>
+          <div style={{ marginBottom: '20px' }}>
+            <label style={{
+              display: 'block',
+              marginBottom: '8px',
+              fontWeight: '500',
+              color: '#a0aec0'
+            }}>
+              Mode:
+            </label>
+            <div style={{
+              display: 'flex',
+              gap: '20px',
+              color: '#e2e8f0'
+            }}>
+              <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+                <input
+                  type="radio"
+                  checked={mode === "url"}
+                  onChange={() => setMode("url")}
+                  style={{ accentColor: '#63b3ed' }}
+                />
+                URL
+              </label>
+              <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+                <input
+                  type="radio"
+                  checked={mode === "upload"}
+                  onChange={() => setMode("upload")}
+                  style={{ accentColor: '#63b3ed' }}
+                />
+                Upload
+              </label>
+            </div>
+          </div>
 
-					<div style={{ marginBottom: '20px' }}>
-						<label style={{
-							display: 'block',
-							marginBottom: '8px',
-							fontWeight: '500',
-							color: '#555'
-						}}>
-							League ID*:
-						</label>
-						<label style={{
-							display: 'block',
-							marginBottom: '5px',
-							fontWeight: '500',
-							fontSize: '12px',
-							color: '#555'
-						}}>
-							Liga a la que pertenece el equipo
-						</label>
-						<input
-							type="number"
-							value={leagueId}
-							onChange={(e) => setLeagueId(Number(e.target.value))}
-							min={1}
-							required
-							style={{
-								width: '100%',
-								padding: '12px',
-								border: '2px solid #ddd',
-								borderRadius: '6px',
-								fontSize: '16px',
-								transition: 'border-color 0.3s',
-								outline: 'none'
-							}}
-							onFocus={(e) => e.currentTarget.style.borderColor = '#007bff'}
-							onBlur={(e) => e.currentTarget.style.borderColor = '#ddd'}
-						/>
-					</div>
+          <div style={{ marginBottom: '20px' }}>
+            <label style={{
+              display: 'block',
+              marginBottom: '8px',
+              fontWeight: '500',
+              color: '#a0aec0'
+            }}>
+              Name:
+            </label>
+            <input
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              required
+              minLength={2}
+              style={{
+                width: '100%',
+                padding: '12px',
+                border: '2px solid #4a5568',
+                borderRadius: '6px',
+                fontSize: '16px',
+                transition: 'border-color 0.3s',
+                outline: 'none',
+                backgroundColor: '#1a202c',
+                color: '#e2e8f0'
+              }}
+              onFocus={(e) => e.target.style.borderColor = '#63b3ed'}
+              onBlur={(e) => e.target.style.borderColor = '#4a5568'}
+            />
+          </div>
 
-					<div style={{ marginBottom: '20px' }}>
-						<label style={{
-							display: 'block',
-							marginBottom: '8px',
-							fontWeight: '500',
-							color: '#555'
-						}}>
-							Descripción:
-						</label>
-						<input
-							type="text"
-							value={description}
-							onChange={(e) => setDescription(e.target.value)}
-							style={{
-								width: '100%',
-								padding: '12px',
-								border: '2px solid #ddd',
-								borderRadius: '6px',
-								fontSize: '16px',
-								transition: 'border-color 0.3s',
-								outline: 'none'
-							}}
-							onFocus={(e) => (e.currentTarget.style.borderColor = '#007bff')}
-							onBlur={(e) => (e.currentTarget.style.borderColor = '#ddd')}
-						/>
-					</div>
+          <div style={{ marginBottom: '20px' }}>
+            <label style={{
+              display: 'block',
+              marginBottom: '8px',
+              fontWeight: '500',
+              color: '#a0aec0'
+            }}>
+              City:
+            </label>
+            <input
+              value={city}
+              onChange={(e) => setCity(e.target.value)}
+              required
+              minLength={2}
+              style={{
+                width: '100%',
+                padding: '12px',
+                border: '2px solid #4a5568',
+                borderRadius: '6px',
+                fontSize: '16px',
+                transition: 'border-color 0.3s',
+                outline: 'none',
+                backgroundColor: '#1a202c',
+                color: '#e2e8f0'
+              }}
+              onFocus={(e) => e.target.style.borderColor = '#63b3ed'}
+              onBlur={(e) => e.target.style.borderColor = '#4a5568'}
+            />
+          </div>
 
-					<div style={{ marginBottom: '30px' }}>
-						<label style={{
-							display: 'block',
-							marginBottom: '8px',
-							fontWeight: '500',
-							color: '#555'
-						}}>
-							Logo URL:
-						</label>
-						<input
-							type="url"
-							value={logoUrl}
-							onChange={(e) => setLogoUrl(e.target.value)}
-							placeholder="https://ejemplo.com/logo.png"
-							style={{
-								width: '100%',
-								padding: '12px',
-								border: '2px solid #ddd',
-								borderRadius: '6px',
-								fontSize: '16px',
-								transition: 'border-color 0.3s',
-								outline: 'none'
-							}}
-							onFocus={(e) => e.currentTarget.style.borderColor = '#007bff'}
-							onBlur={(e) => e.currentTarget.style.borderColor = '#ddd'}
-						/>
-					</div>
+          {mode === "url" ? (
+            <div style={{ marginBottom: '20px' }}>
+              <label style={{
+                display: 'block',
+                marginBottom: '8px',
+                fontWeight: '500',
+                color: '#a0aec0'
+              }}>
+                Image URL (optional):
+              </label>
+              <input
+                value={imageUrl}
+                onChange={(e) => setImageUrl(e.target.value)}
+                placeholder="https://..."
+                style={{
+                  width: '100%',
+                  padding: '12px',
+                  border: '2px solid #4a5568',
+                  borderRadius: '6px',
+                  fontSize: '16px',
+                  transition: 'border-color 0.3s',
+                  outline: 'none',
+                  backgroundColor: '#1a202c',
+                  color: '#e2e8f0'
+                }}
+                onFocus={(e) => e.target.style.borderColor = '#63b3ed'}
+                onBlur={(e) => e.target.style.borderColor = '#4a5568'}
+              />
+              <div style={{
+                marginTop: '12px',
+                height: '160px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                border: '2px dashed #4a5568',
+                borderRadius: '6px',
+                backgroundColor: '#1a202c'
+              }}>
+                {imageUrl ? (
+                  <img src={imageUrl} style={{ maxHeight: '150px', borderRadius: '4px' }} alt="Preview" />
+                ) : (
+                  <span style={{ color: '#a0aec0' }}>Preview</span>
+                )}
+              </div>
+            </div>
+          ) : (
+            <div style={{ marginBottom: '20px' }}>
+              <label style={{
+                display: 'block',
+                marginBottom: '8px',
+                fontWeight: '500',
+                color: '#a0aec0'
+              }}>
+                Image file:
+              </label>
+              <div>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept=".png,.jpg,.jpeg,.webp"
+                  onChange={(e) => setFile(e.target.files?.[0] || null)}
+                  style={{
+                    display: 'none'
+                  }}
+                />
+                <button
+                  type="button"
+                  onClick={handleFileButtonClick}
+                  style={{
+                    width: '100%',
+                    padding: '12px',
+                    backgroundColor: '#2d3748',
+                    color: '#e2e8f0',
+                    border: '2px solid #4a5568',
+                    borderRadius: '6px',
+                    fontSize: '16px',
+                    cursor: 'pointer',
+                    transition: 'all 0.3s',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '8px'
+                  }}
+                  onMouseOver={(e) => e.currentTarget.style.borderColor = '#63b3ed'}
+                  onMouseOut={(e) => e.currentTarget.style.borderColor = '#4a5568'}
+                >
+                  {file ? file.name : 'Choose File'}
+                </button>
+              </div>
+              <div style={{
+                marginTop: '12px',
+                height: '160px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                border: '2px dashed #4a5568',
+                borderRadius: '6px',
+                backgroundColor: '#1a202c'
+              }}>
+                {file ? (
+                  <img src={URL.createObjectURL(file)} style={{ maxHeight: '150px', borderRadius: '4px' }} alt="Preview" />
+                ) : (
+                  <span style={{ color: '#a0aec0' }}>Preview</span>
+                )}
+              </div>
+            </div>
+          )}
 
-					<button
-						type="submit"
-						disabled={loading}
-						style={{
-							width: '100%',
-							padding: '14px',
-							backgroundColor: loading ? '#ccc' : '#007bff',
-							color: 'white',
-							border: 'none',
-							borderRadius: '6px',
-							fontSize: '16px',
-							fontWeight: '600',
-							cursor: loading ? 'not-allowed' : 'pointer',
-							transition: 'background-color 0.3s',
-							marginBottom: '20px'
-						}}
-						onMouseOver={(e) => {
-							if (!loading) (e.target as HTMLButtonElement).style.backgroundColor = '#0056b3';
-						}}
-						onMouseOut={(e) => {
-							if (!loading) (e.target as HTMLButtonElement).style.backgroundColor = '#007bff';
-						}}
-					>
-						{loading ? 'Creando...' : 'Crear equipo'}
-					</button>
+          <button
+            type="submit"
+            disabled={submitting}
+            style={{
+              width: '100%',
+              padding: '14px',
+              backgroundColor: submitting ? '#4a5568' : '#63b3ed',
+              color: submitting ? '#a0aec0' : '#1a202c',
+              border: 'none',
+              borderRadius: '6px',
+              fontSize: '16px',
+              fontWeight: '600',
+              cursor: submitting ? 'not-allowed' : 'pointer',
+              transition: 'background-color 0.3s'
+            }}
+          >
+            {submitting ? "Creating…" : "Create Team"}
+          </button>
 
-					<p style={{
-						textAlign: 'center',
-						color: '#666',
-						margin: 0
-					}}>
-						¿Volver al perfil?{' '}
-						<Link
-							to="/profile"
-							style={{
-								color: '#007bff',
-								textDecoration: 'none',
-								fontWeight: '500'
-							}}
-						>
-							Ir al perfil
-						</Link>
-					</p>
-				</form>
-			</div>
-		</div>
-	);
-};
-
-export default TeamForm;
-// ...existing code from original TeamForm.tsx...
+        </form>
+      </div>
+    </div>
+  );
+}

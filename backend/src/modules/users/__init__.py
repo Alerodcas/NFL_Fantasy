@@ -1,3 +1,3 @@
 """User module package."""
 
-__all__ = ["models", "repository", "schemas"]
+__all__ = ["models", "repository", "schemas", "router"]
