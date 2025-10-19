@@ -41,33 +41,39 @@ def name_exists(db: Session, league_name: str) -> bool:
         select(models.League.id).where(models.League.name == league_name)
     ).scalar_one_or_none() is not None
 
-
-def team_name_exists_anywhere(db: Session, team_name: str) -> bool:
-    return db.query(team_models.Team.id)\
-             .filter(func.lower(team_models.Team.name) == func.lower(team_name))\
-             .first() is not None
+def get_team_by_name_case_insensitive(db: Session, team_name: str) -> team_models.Team | None:
+    return db.execute(
+        select(team_models.Team).where(func.lower(team_models.Team.name) == func.lower(team_name))
+    ).scalar_one_or_none()
 
 def create_league_with_commissioner_team(
     db: Session,
     creator_user_id: int,
     payload: schemas.LeagueCreate,
 ):
-    # Validate unique league name at DB-level too (leagues.name unique), but pre-check for nice error
+    # Validar nombre de liga único
     if name_exists(db, payload.name):
         raise ValueError("A league with that name already exists.")
-    
-    if team_name_exists_anywhere(db, payload.team_name):
-        raise ValueError("A team with that name already exists.")
 
-    # Season
+    # Temporada actual
     season = get_current_season(db)
     if not season:
         raise RuntimeError("No current season is set. An administrator must mark one season as current.")
 
-    # Hash league password with the same helper as users
+    # Buscar equipo por nombre (único global)
+    team = get_team_by_name_case_insensitive(db, payload.team_name)
+    if not team:
+        # evitar filtrar info de existencia vs dueño → 404 genérico
+        raise LookupError("Team not found.")
+    if team.created_by != creator_user_id:
+        # seguridad: no puedes usar equipo ajeno
+        raise PermissionError("Solo puedes asignar un equipo propio.")
+    if team.league_id is not None:
+        raise ValueError("This team is already assigned to a league.")
+
+    # Hash contraseña de liga
     pwd_hash = security.get_password_hash(payload.password)
 
-    # Prepare league
     lg = models.League(
         name=payload.name.strip(),
         description=(payload.description or "").strip() or None,
@@ -88,24 +94,15 @@ def create_league_with_commissioner_team(
     # Transactional create
     try:
         db.add(lg)
-        db.flush()  # get lg.id
+        db.flush()  
 
-        # Commissioner’s team
-        team_city = (payload.team_city or "N/A").strip()
-        if len(team_city) < 2:   # teams.city CHECK >= 2
-            team_city = "N/A"
-
-        commissioner_team = team_models.Team(
-            name=payload.team_name.strip(),
-            city=team_city,
-            created_by=creator_user_id,
-            league_id=lg.id,
-        )
-        db.add(commissioner_team)
+        # Asignar equipo existente a la liga
+        team.league_id = lg.id
+        db.add(team)
 
         db.commit()
         db.refresh(lg)
-        return lg, commissioner_team
+        return lg, team
     except Exception:
         db.rollback()
         raise

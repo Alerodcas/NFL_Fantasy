@@ -11,9 +11,7 @@ class LeagueCreate(BaseModel):
     playoff_format: Literal[4, 6]
     allow_decimal_scoring: bool = True
 
-    # Commissioner team data (user story: must enter team name upon creation)
-    team_name: str = Field(..., min_length=2)
-    team_city: Optional[str] = Field(None, min_length=2)  # teams.city is NOT NULL; we’ll default to 'N/A' if None
+    team_name: str = Field(..., min_length=2, max_length=128)
 
     @field_validator("max_teams")
     @classmethod
@@ -25,10 +23,11 @@ class LeagueCreate(BaseModel):
     @field_validator("password")
     @classmethod
     def validate_password(cls, v: str):
-        # 8–12 chars, alphanumeric, at least one lowercase and one uppercase
         import re
         if not re.fullmatch(r"(?=.*[a-z])(?=.*[A-Z])[A-Za-z0-9]{8,12}", v):
-            raise ValueError("Password must be 8–12 chars, alphanumeric, include at least one lowercase and one uppercase.")
+            raise ValueError(
+                "Password must be 8–12 chars, alphanumeric, include at least one lowercase and one uppercase."
+            )
         return v
 
 
@@ -43,4 +42,3 @@ class LeagueCreated(BaseModel):
     season_id: int
     slots_remaining: int
     commissioner_team_id: int
-

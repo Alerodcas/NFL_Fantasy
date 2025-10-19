@@ -74,3 +74,4 @@ CREATE UNIQUE INDEX IF NOT EXISTS ux_teams_name_global
 
 CREATE INDEX IF NOT EXISTS ix_teams_league_id ON teams (league_id);
 
+
