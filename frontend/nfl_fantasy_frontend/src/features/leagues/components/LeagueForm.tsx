@@ -6,12 +6,10 @@ import { listTeams, Team } from "../../../services/teams";
 const TEAM_SIZES = [4,6,8,10,12,14,16,18,20] as const;
 const PASSWORD_RE = /^(?=.*[a-z])(?=.*[A-Z])[A-Za-z0-9]{8,12}$/;
 
-function getCurrentUserId(): number | null {
-  // Intenta leer el userId desde localStorage (ajústalo a tu app si usas otro storage/clave)
-  const raw = localStorage.getItem("userId");
-  if (!raw) return null;
-  const n = Number(raw);
-  return Number.isFinite(n) ? n : null;
+import { useAuth } from "../../../shared/hooks/useAuth";
+
+function getCurrentUserId(user: any): number | null {
+  return user?.id || null;
 }
 
 export default function LeagueForm() {
@@ -36,20 +34,20 @@ export default function LeagueForm() {
   const [success, setSuccess] = useState<string | null>(null);
   const [result, setResult] = useState<LeagueCreatedResponse | null>(null);
 
-  const currentUserId = useMemo(() => getCurrentUserId(), []);
+  const auth = useAuth();
+  const currentUserId = useMemo(() => getCurrentUserId(auth.user), [auth.user]);
 
   useEffect(() => {
     (async () => {
       try {
         setTeamsLoading(true);
-        const data = await listTeams(); // GET /teams (tu servicio actual)
-        // Filtra por propietario si conocemos el userId
-        const mine = currentUserId
-          ? data.filter((t) => t.created_by === currentUserId)
-          : data;
-        setTeams(mine);
-        // Si hay equipos del usuario, preselecciona el primero
-        if (mine.length > 0) setTeamName(mine[0].name);
+        const data = await listTeams({ 
+          user_id: currentUserId || undefined,
+          active: true // Only get active teams
+        });
+        setTeams(data);
+        // If user has teams, select the first one
+        if (data.length > 0) setTeamName(data[0].name);
       } catch (e) {
         // si falla, deja teams vacío; el backend validará propiedad igualmente
         setTeams([]);

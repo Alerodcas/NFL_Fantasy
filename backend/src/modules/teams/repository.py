@@ -54,12 +54,14 @@ def update_team(
     db.refresh(team)
     return team
 
-def list_teams(db: Session, q: Optional[str], active: Optional[bool]) -> List[models.Team]:
+def list_teams(db: Session, q: Optional[str], active: Optional[bool], user_id: Optional[int] = None) -> List[models.Team]:
     stmt = select(models.Team)
     if q:
         like = f"%{q.strip()}%"
         stmt = stmt.where((models.Team.name.ilike(like)) | (models.Team.city.ilike(like)))
     if active is not None:
         stmt = stmt.where(models.Team.is_active == active)
+    if user_id is not None:
+        stmt = stmt.where(models.Team.created_by == user_id)
     stmt = stmt.order_by(models.Team.name.asc())
     return db.execute(stmt).scalars().all()
