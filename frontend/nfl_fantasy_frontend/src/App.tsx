@@ -4,6 +4,7 @@ import RegisterForm from './features/auth/components/RegisterForm';
 import LoginForm from './features/auth/components/LoginForm';
 import ProfilePage from './features/profile/components/ProfilePage';
 import TeamForm from './features/teams/components/TeamForm';
+import LeagueForm from "./features/leagues/components/LeagueForm";
 import { AuthProvider } from './shared/context/AuthContext';
 import { useAuth } from './shared/hooks/useAuth';
 
@@ -41,6 +42,7 @@ function App() {
               </PrivateRoute>
             }
           />
+          <Route path="/create-league" element={<LeagueForm />} />
           <Route path="*" element={<Navigate to="/login" />} />
         </Routes>
       </Router>

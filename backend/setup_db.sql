@@ -73,5 +73,7 @@ CREATE UNIQUE INDEX IF NOT EXISTS ux_teams_name_global
   ON teams (LOWER(name::text));
 
 CREATE INDEX IF NOT EXISTS ix_teams_league_id ON teams (league_id);
+CREATE INDEX IF NOT EXISTS ix_teams_created_by ON teams (created_by);
+
 
 
