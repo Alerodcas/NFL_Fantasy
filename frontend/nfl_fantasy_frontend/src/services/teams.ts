@@ -19,7 +19,7 @@ export type TeamCreateJson = {
 
 export type TeamUpdate = Partial<Pick<Team, "name" | "city" | "image_url" | "is_active">>;
 
-export async function listTeams(params?: { q?: string; active?: boolean }) {
+export async function listTeams(params?: { q?: string; active?: boolean; user_id?: number }) {
   const res = await api.get<Team[]>("/teams", { params });
   return res.data;
 }

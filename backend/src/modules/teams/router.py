@@ -138,8 +138,13 @@ def create_team_upload(
 
 # C) List
 @router.get("", response_model=List[TeamOut])
-def list_teams(q: Optional[str] = None, active: Optional[bool] = None, db: Session = Depends(get_db)):
-    return repo_list(db, q, active)
+def list_teams(
+    q: Optional[str] = None,
+    active: Optional[bool] = None,
+    user_id: Optional[int] = None,
+    db: Session = Depends(get_db)
+):
+    return repo_list(db, q, active, user_id)
 
 # D) Get by id
 @router.get("/{team_id}", response_model=TeamOut)
