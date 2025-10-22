@@ -59,4 +59,19 @@ class Token(BaseModel):
     access_token: str
     token_type: str
 
+class LoginRequest(BaseModel):
+    email: str
+    password: str
+
+class LoginResponse(BaseModel):
+    access_token: str
+    token_type: str = "bearer"
+    user_id: int
+    
+    class Config:
+        from_attributes = True
+
+class MessageResponse(BaseModel):
+    message: str
+
 
