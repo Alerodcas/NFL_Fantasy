@@ -39,7 +39,7 @@ from .modules.users.router import router as users_router
 from .modules.teams.router import router as teams_router
 app.include_router(users_router, tags=["users"])
 app.include_router(teams_router, prefix="/teams", tags=["teams"])
-app.include_router(leagues_router)
+app.include_router(leagues_router, prefix="/leagues", tags=["leagues"])
 
 
 # 422 handler

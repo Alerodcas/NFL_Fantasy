@@ -17,15 +17,18 @@ const LoginForm = () => {
 		setError('');
     
 		try {
-			const formData = new URLSearchParams();
-			formData.append('username', email);
-			formData.append('password', password);
-
-			const response = await api.post('/token', formData);
+			// Cambiar a /login con JSON en lugar de /token con form-data
+			const response = await api.post('/login', {
+				email: email,
+				password: password
+			});
+			
 			auth.login(response.data.access_token);
 			navigate('/profile');
 		} catch (err: any) {
-			setError(err.response?.data?.detail || 'Error al iniciar sesión.');
+			// Mostrar el mensaje específico del backend
+			const errorMessage = err.response?.data?.detail || 'Error al iniciar sesión.';
+			setError(errorMessage);
 		} finally {
 			setLoading(false);
 		}
@@ -176,4 +179,3 @@ const LoginForm = () => {
 };
 
 export default LoginForm;
-// ...existing code from original LoginForm.tsx...
