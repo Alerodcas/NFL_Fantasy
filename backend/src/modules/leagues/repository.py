@@ -53,21 +53,26 @@ def create_league_with_commissioner_team(
 ):
     # Validar nombre de liga único
     if name_exists(db, payload.name):
+        print("[DEBUG] Liga con ese nombre ya existe")
         raise ValueError("A league with that name already exists.")
 
     # Temporada actual
     season = get_current_season(db)
+    print(f"[DEBUG] Temporada actual: {season}")
     if not season:
         raise RuntimeError("No current season is set. An administrator must mark one season as current.")
 
-    # Buscar equipo por nombre (único global)
-    team = get_team_by_name_case_insensitive(db, payload.team_name)
+    # Buscar equipo por id
+    team = db.execute(
+        select(team_models.Team).where(team_models.Team.id == payload.team_id)
+    ).scalar_one_or_none()
     if not team:
         # evitar filtrar info de existencia vs dueño → 404 genérico
         raise LookupError("Team not found.")
     if team.created_by != creator_user_id:
         # seguridad: no puedes usar equipo ajeno
         raise PermissionError("Solo puedes asignar un equipo propio.")
+    print(f"[DEBUG] team.league_id value: {team.league_id!r}, type: {type(team.league_id)}")
     if team.league_id is not None:
         raise ValueError("This team is already assigned to a league.")
 

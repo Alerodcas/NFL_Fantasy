@@ -12,7 +12,7 @@ class LeagueCreate(BaseModel):
     playoff_format: Literal[4, 6]
     allow_decimal_scoring: bool = True
 
-    team_name: str = Field(..., min_length=2, max_length=128)
+    team_id: int = Field(..., ge=1)
 
     @field_validator("max_teams")
     @classmethod

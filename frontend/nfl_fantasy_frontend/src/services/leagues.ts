@@ -8,7 +8,7 @@ export type LeagueCreatePayload = {
   password: string;          // 8–12 alphanumeric, at least one lower + one upper
   playoff_format: 4|6;
   allow_decimal_scoring: boolean;
-  team_name: string;
+  team_id: number;
 };
 
 export type LeagueCreatedResponse = {

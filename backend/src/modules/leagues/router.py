@@ -15,6 +15,7 @@ def create_league(
     db: Session = Depends(get_db),
     current_user = Depends(get_current_user),
 ):
+    print(f"[DEBUG] Payload recibido en backend: {payload}")
     try:
         if hasattr(audit, "log_event"):
             audit.log_event(
@@ -29,9 +30,11 @@ def create_league(
         pass
 
     try:
+        print("[DEBUG] Llamando a create_league_with_commissioner_team")
         league, team = crud.create_league_with_commissioner_team(
             db=db, creator_user_id=current_user.id, payload=payload
         )
+        print("[DEBUG] create_league_with_commissioner_team completado exitosamente")
     except LookupError:
         raise HTTPException(status_code=404, detail="Team not found.")
     except PermissionError as pe:
@@ -43,7 +46,10 @@ def create_league(
         raise HTTPException(status_code=400, detail=msg)
     except RuntimeError as re:
         raise HTTPException(status_code=409, detail=str(re))
-    except Exception:
+    except Exception as e:
+        print(f"[DEBUG] Error en create_league_with_commissioner_team: {e}")
+        import traceback
+        traceback.print_exc()
         raise HTTPException(status_code=500, detail="Could not create league.")
 
     slots_remaining = int(league.max_teams) - 1
