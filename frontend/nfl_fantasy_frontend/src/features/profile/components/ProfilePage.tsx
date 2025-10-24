@@ -39,6 +39,9 @@ const ProfilePage = () => {
 	const handleCreateLeague = () => {
 		navigate('/create-league');
 	};
+	const handleCreateSeason = () => {
+		navigate('/create-season');
+	};
 
 	return (
 		<div style={{
@@ -252,6 +255,24 @@ const ProfilePage = () => {
 						}}
 					>
 						Crear Liga
+					</button>
+
+					<button
+						onClick={handleCreateSeason}
+						style={{
+							width: '100%',
+							padding: '14px',
+							backgroundColor: '#63b3ed',
+							color: 'white',
+							border: 'none',
+							borderRadius: '6px',
+							fontSize: '16px',
+							fontWeight: '600',
+							cursor: 'pointer',
+							transition: 'background-color 0.3s'
+						}}
+					>
+						Crear Temporada
 					</button>
 
 					<button

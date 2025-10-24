@@ -7,6 +7,7 @@ import TeamForm from './features/teams/components/TeamForm';
 import LeagueForm from "./features/leagues/components/LeagueForm";
 import { AuthProvider } from './shared/context/AuthContext';
 import { useAuth } from './shared/hooks/useAuth';
+import SeasonForm from './features/seasons/Seasonsform';
 
 // Componente para proteger rutas que requieren autenticación
 const PrivateRoute = ({ children }: { children: JSX.Element }): JSX.Element | null => {
@@ -43,6 +44,7 @@ function App() {
             }
           />
           <Route path="/create-league" element={<LeagueForm />} />
+          <Route path="/create-season" element={<SeasonForm />} />
           <Route path="*" element={<Navigate to="/login" />} />
         </Routes>
       </Router>

@@ -8,7 +8,7 @@ if defined _OLD_CODEPAGE (
     "%SystemRoot%\System32\chcp.com" 65001 > nul
 )
 
-set "VIRTUAL_ENV=C:\Users\alero\Documents\Github\NFL_Fantasy\backend\.venv"
+set "VIRTUAL_ENV=C:\Users\isabe\OneDrive\Documents\GitHub\NFL_Fantasy\backend\.venv"
 
 if not defined PROMPT set PROMPT=$P$G
 

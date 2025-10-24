@@ -9,7 +9,7 @@ from .config.database import engine
 from .modules.users import models as user_models
 from .modules.teams import models as team_models
 from .modules.leagues.router import router as leagues_router
-
+from .modules.seasons.router import router as seasons_router
 
 # Create tables
 user_models.Base.metadata.create_all(bind=engine)
@@ -40,7 +40,7 @@ from .modules.teams.router import router as teams_router
 app.include_router(users_router, tags=["users"])
 app.include_router(teams_router, prefix="/teams", tags=["teams"])
 app.include_router(leagues_router)
-
+app.include_router(seasons_router)
 
 # 422 handler
 @app.exception_handler(RequestValidationError)
