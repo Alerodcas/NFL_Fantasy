@@ -3,6 +3,7 @@ from fastapi import APIRouter, Depends, HTTPException, status, Request
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 from jose import jwt
+from datetime import timedelta, datetime
 
 from ...config.database import get_db
 from ...config import auth as security
@@ -129,8 +130,64 @@ def login_for_access_token(
     )
     return {"access_token": access_token, "token_type": "bearer"}
 
+@router.post("/login", response_model=schemas.LoginResponse)
+def login(login_data: schemas.LoginRequest, db: Session = Depends(get_db)):
+    # Buscar usuario por email
+    user = db.query(models.User).filter(models.User.email == login_data.email).first()
+    
+    # Si no existe el usuario o la contraseña es incorrecta
+    if not user or not security.verify_password(login_data.password, user.hashed_password):
+        if user:
+            # Incrementar intentos fallidos
+            user.failed_login_attempts += 1
+            
+            # Bloquear cuenta al quinto intento (>= 5)
+            if user.failed_login_attempts >= 5:
+                user.account_status = "blocked"
+                db.commit()
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail="Cuenta Bloqueada"
+                )
+            
+            db.commit()
+        
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Credenciales Incorrectas"
+        )
+    
+    # Verificar si la cuenta está bloqueada antes de permitir login
+    if user.account_status == "blocked":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Cuenta Bloqueada"
+        )
+    
+    # Login exitoso: resetear intentos y actualizar actividad
+    user.failed_login_attempts = 0
+    user.last_activity = datetime.utcnow()
+    db.commit()
+    
+    # Token de larga duración (24h), inactividad controlada por last_activity
+    access_token = security.create_access_token(
+        data={"sub": user.email, "user_id": user.id},
+        expires_delta=timedelta(hours=24)
+    )
+    
+    return schemas.LoginResponse(
+        access_token=access_token,
+        user_id=user.id
+    )
+
+@router.post("/logout", response_model=schemas.MessageResponse)
+def logout(current_user: models.User = Depends(get_current_user)):
+    # En arquitectura JWT stateless, el logout es del lado del cliente
+    # El cliente debe eliminar el token
+    return schemas.MessageResponse(message="Sesión cerrada exitosamente")
+
 @router.get("/users/me/", response_model=schemas.User)
-def read_users_me(current_user: Annotated[schemas.User, Depends(get_current_user)]):
+def read_users_me(current_user: Annotated[models.User, Depends(get_current_user)]):
     return current_user
 
 @router.put("/users/me/", response_model=schemas.User)

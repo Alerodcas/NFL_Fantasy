@@ -9,7 +9,7 @@ from .config.database import engine
 from .modules.users import models as user_models
 from .modules.teams import models as team_models
 from .modules.leagues.router import router as leagues_router
-from .modules.seasons.router import router as seasons_router
+
 
 # Create tables
 user_models.Base.metadata.create_all(bind=engine)
@@ -37,10 +37,13 @@ app.mount("/media", StaticFiles(directory=str(MEDIA_DIR)), name="media")
 # Routers
 from .modules.users.router import router as users_router
 from .modules.teams.router import router as teams_router
+from .modules.leagues.routes.season_routes import router as season_router
+
 app.include_router(users_router, tags=["users"])
 app.include_router(teams_router, prefix="/teams", tags=["teams"])
-app.include_router(leagues_router)
-app.include_router(seasons_router)
+app.include_router(leagues_router, prefix="/leagues", tags=["leagues"])
+app.include_router(season_router, prefix="/api", tags=["seasons"])
+
 
 # 422 handler
 @app.exception_handler(RequestValidationError)

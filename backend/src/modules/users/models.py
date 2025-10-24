@@ -15,3 +15,4 @@ class User(Base):
     account_status = Column(String(20), default='active')
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     failed_login_attempts = Column(Integer, default=0)
+    last_activity = Column(DateTime(timezone=True), nullable=True)

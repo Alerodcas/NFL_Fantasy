@@ -27,11 +27,11 @@ class UserCreate(BaseModel):
 class User(BaseModel):
     id: int
     name: str
-    email: EmailStr
+    email: str
     alias: str
     role: str
     account_status: str
-
+    
     class Config:
         from_attributes = True
 
@@ -58,5 +58,20 @@ class UserUpdate(BaseModel):
 class Token(BaseModel):
     access_token: str
     token_type: str
+
+class LoginRequest(BaseModel):
+    email: str
+    password: str
+
+class LoginResponse(BaseModel):
+    access_token: str
+    token_type: str = "bearer"
+    user_id: int
+    
+    class Config:
+        from_attributes = True
+
+class MessageResponse(BaseModel):
+    message: str
 
 

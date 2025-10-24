@@ -5,9 +5,10 @@ import LoginForm from './features/auth/components/LoginForm';
 import ProfilePage from './features/profile/components/ProfilePage';
 import TeamForm from './features/teams/components/TeamForm';
 import LeagueForm from "./features/leagues/components/LeagueForm";
+import AdminProfile from './features/admin/AdminProfile';
+import CreateSeason from './features/seasons/CreateSeason';
 import { AuthProvider } from './shared/context/AuthContext';
 import { useAuth } from './shared/hooks/useAuth';
-import SeasonForm from './features/seasons/Seasonsform';
 
 // Componente para proteger rutas que requieren autenticación
 const PrivateRoute = ({ children }: { children: JSX.Element }): JSX.Element | null => {
@@ -34,7 +35,22 @@ function App() {
               </PrivateRoute>
             }
           />
-        
+          <Route
+            path="/admin"
+            element={
+              <PrivateRoute>
+                <AdminProfile />
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/admin/seasons/create"
+            element={
+              <PrivateRoute>
+                <CreateSeason />
+              </PrivateRoute>
+            }
+          />
           <Route
             path="/teams/new"
             element={
@@ -44,7 +60,6 @@ function App() {
             }
           />
           <Route path="/create-league" element={<LeagueForm />} />
-          <Route path="/create-season" element={<SeasonForm />} />
           <Route path="*" element={<Navigate to="/login" />} />
         </Routes>
       </Router>

@@ -1,0 +1,195 @@
+from sqlalchemy.orm import Session
+from sqlalchemy import and_, or_
+from fastapi import HTTPException, status
+from datetime import date
+from typing import List, Optional
+from ..models import Season, Week
+from ..schemas import SeasonCreate, SeasonUpdate, WeekCreate
+
+class SeasonService:
+    
+    @staticmethod
+    def validate_date_ranges(start_date: date, end_date: date):
+        """Valida que las fechas sean coherentes"""
+        if end_date <= start_date:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="La fecha de fin debe ser posterior a la fecha de inicio"
+            )
+        
+        if start_date < date.today():
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="La fecha de inicio no puede estar en el pasado"
+            )
+    
+    @staticmethod
+    def validate_weeks_overlap(weeks: List[WeekCreate]):
+        """Valida que las semanas no se traslapen entre sí"""
+        sorted_weeks = sorted(weeks, key=lambda w: w.start_date)
+        
+        for i in range(len(sorted_weeks) - 1):
+            current_week = sorted_weeks[i]
+            next_week = sorted_weeks[i + 1]
+            
+            if current_week.end_date >= next_week.start_date:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail=f"Las semanas {current_week.week_number} y {next_week.week_number} se traslapan"
+                )
+    
+    @staticmethod
+    def validate_weeks_within_season(weeks: List[WeekCreate], season_start: date, season_end: date):
+        """Valida que todas las semanas estén dentro del rango de la temporada"""
+        for week in weeks:
+            if week.start_date < season_start or week.end_date > season_end:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail=f"La semana {week.week_number} está fuera del rango de la temporada"
+                )
+    
+    @staticmethod
+    def check_season_overlap(db: Session, start_date: date, end_date: date, exclude_season_id: Optional[int] = None):
+        """Verifica si hay traslape con otra temporada existente"""
+        query = db.query(Season).filter(
+            or_(
+                and_(Season.start_date <= start_date, Season.end_date >= start_date),
+                and_(Season.start_date <= end_date, Season.end_date >= end_date),
+                and_(Season.start_date >= start_date, Season.end_date <= end_date)
+            )
+        )
+        
+        if exclude_season_id:
+            query = query.filter(Season.id != exclude_season_id)
+        
+        overlapping_season = query.first()
+        
+        if overlapping_season:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Las fechas se traslapan con la temporada existente: {overlapping_season.name}"
+            )
+    
+    @staticmethod
+    def check_name_exists(db: Session, name: str, exclude_season_id: Optional[int] = None):
+        """Verifica si el nombre ya existe"""
+        query = db.query(Season).filter(Season.name == name)
+        
+        if exclude_season_id:
+            query = query.filter(Season.id != exclude_season_id)
+        
+        if query.first():
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Ya existe una temporada con el nombre: {name}"
+            )
+    
+    @staticmethod
+    def unset_current_season(db: Session, exclude_season_id: Optional[int] = None):
+        """Quita el flag is_current de todas las temporadas"""
+        query = db.query(Season).filter(Season.is_current == True)
+        
+        if exclude_season_id:
+            query = query.filter(Season.id != exclude_season_id)
+        
+        query.update({"is_current": False})
+    
+    @staticmethod
+    def create_season(db: Session, season_data: SeasonCreate, user_id: int) -> Season:
+        """Crea una nueva temporada con todas las validaciones"""
+        
+        # Validaciones de fechas
+        SeasonService.validate_date_ranges(season_data.start_date, season_data.end_date)
+        
+        # Validar nombre único
+        SeasonService.check_name_exists(db, season_data.name)
+        
+        # Validar traslape con otras temporadas
+        SeasonService.check_season_overlap(db, season_data.start_date, season_data.end_date)
+        
+        # Validar semanas
+        if season_data.weeks:
+            SeasonService.validate_weeks_overlap(season_data.weeks)
+            SeasonService.validate_weeks_within_season(
+                season_data.weeks, 
+                season_data.start_date, 
+                season_data.end_date
+            )
+        
+        # Si se marca como actual, quitar flag de otras temporadas
+        if season_data.is_current:
+            SeasonService.unset_current_season(db)
+        
+        # Crear temporada
+        season = Season(
+            name=season_data.name,
+            year=season_data.start_date.year,
+            week_count=season_data.week_count,
+            start_date=season_data.start_date,
+            end_date=season_data.end_date,
+            is_current=season_data.is_current,
+            created_by=user_id
+        )
+        
+        db.add(season)
+        db.flush()  # Para obtener el ID
+        
+        # Crear semanas
+        for week_data in season_data.weeks:
+            week = Week(
+                season_id=season.id,
+                week_number=week_data.week_number,
+                start_date=week_data.start_date,
+                end_date=week_data.end_date
+            )
+            db.add(week)
+        
+        db.commit()
+        db.refresh(season)
+        
+        return season
+    
+    @staticmethod
+    def update_season(db: Session, season_id: int, season_data: SeasonUpdate) -> Season:
+        """Actualiza una temporada"""
+        season = db.query(Season).filter(Season.id == season_id).first()
+        
+        if not season:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Temporada no encontrada"
+            )
+        
+        # Si se actualiza el nombre, validar que no exista
+        if season_data.name and season_data.name != season.name:
+            SeasonService.check_name_exists(db, season_data.name, season_id)
+            season.name = season_data.name
+        
+        # Si se marca como actual, quitar flag de otras temporadas
+        if season_data.is_current is not None:
+            if season_data.is_current:
+                SeasonService.unset_current_season(db, season_id)
+            season.is_current = season_data.is_current
+        
+        db.commit()
+        db.refresh(season)
+        
+        return season
+    
+    @staticmethod
+    def get_seasons(db: Session, skip: int = 0, limit: int = 100) -> List[Season]:
+        """Obtiene lista de temporadas"""
+        return db.query(Season).offset(skip).limit(limit).all()
+    
+    @staticmethod
+    def get_season(db: Session, season_id: int) -> Season:
+        """Obtiene una temporada por ID"""
+        season = db.query(Season).filter(Season.id == season_id).first()
+        
+        if not season:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Temporada no encontrada"
+            )
+        
+        return season
