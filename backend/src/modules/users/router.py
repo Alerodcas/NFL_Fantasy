@@ -187,7 +187,7 @@ def logout(current_user: models.User = Depends(get_current_user)):
     return schemas.MessageResponse(message="Sesión cerrada exitosamente")
 
 @router.get("/users/me/", response_model=schemas.User)
-def read_users_me(current_user: Annotated[schemas.User, Depends(get_current_user)]):
+def read_users_me(current_user: Annotated[models.User, Depends(get_current_user)]):
     return current_user
 
 @router.put("/users/me/", response_model=schemas.User)

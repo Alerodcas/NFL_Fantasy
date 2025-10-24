@@ -1,34 +1,14 @@
-from sqlalchemy import Column, Integer, String, Boolean, DateTime, Date, func, ForeignKey
+from sqlalchemy import Column, Integer, String, Boolean, DateTime, func, ForeignKey
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.sql import text
-from sqlalchemy.orm import relationship
 from ...config.database import Base
 
 class Season(Base):
     __tablename__ = "seasons"
-    id = Column(Integer, primary_key=True, index=True)
-    name = Column(String(100), nullable=False, unique=True)
-    year = Column(Integer, nullable=False)
-    week_count = Column(Integer, nullable=False)
-    start_date = Column(Date, nullable=False)
-    end_date = Column(Date, nullable=False)
+    id = Column(Integer, primary_key=True)
+    year = Column(Integer, nullable=False, unique=True)
     is_current = Column(Boolean, nullable=False, server_default=text("FALSE"))
-    created_by = Column(Integer, ForeignKey("users.id", ondelete="RESTRICT"), nullable=False)
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
-    
-    weeks = relationship("Week", back_populates="season", cascade="all, delete-orphan")
-    leagues = relationship("League", back_populates="season")
-
-class Week(Base):
-    __tablename__ = "weeks"
-    
-    id = Column(Integer, primary_key=True, index=True)
-    season_id = Column(Integer, ForeignKey("seasons.id", ondelete="CASCADE"), nullable=False)
-    week_number = Column(Integer, nullable=False)
-    start_date = Column(Date, nullable=False)
-    end_date = Column(Date, nullable=False)
-    
-    season = relationship("Season", back_populates="weeks")
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
 
 class League(Base):
     __tablename__ = "leagues"
@@ -49,5 +29,21 @@ class League(Base):
     roster_schema = Column(JSONB, nullable=False)
     scoring_schema = Column(JSONB, nullable=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
-    
-    season = relationship("Season", back_populates="leagues")
+
+class User(Base):
+    __tablename__ = "users"
+    id = Column(Integer, primary_key=True)
+    username = Column(String(50), nullable=False, unique=True)
+    email = Column(String(255), nullable=False, unique=True)
+    first_name = Column(String(50), nullable=False)
+    last_name = Column(String(50), nullable=False)
+    password_hash = Column(String(255), nullable=False)
+    role = Column(String(50), nullable=False)
+    is_active = Column(Boolean, nullable=False, server_default=text("TRUE"))
+    email_verified = Column(Boolean, nullable=False, server_default=text("FALSE"))
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+
+    __table_args__ = (
+        text("CONSTRAINT username_unique UNIQUE (username)"),
+        text("CONSTRAINT email_unique UNIQUE (email)"),
+    )

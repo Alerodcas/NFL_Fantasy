@@ -27,11 +27,11 @@ class UserCreate(BaseModel):
 class User(BaseModel):
     id: int
     name: str
-    email: EmailStr
+    email: str
     alias: str
     role: str
     account_status: str
-
+    
     class Config:
         from_attributes = True
 

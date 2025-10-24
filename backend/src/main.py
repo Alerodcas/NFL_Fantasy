@@ -37,17 +37,33 @@ app.mount("/media", StaticFiles(directory=str(MEDIA_DIR)), name="media")
 # Routers
 from .modules.users.router import router as users_router
 from .modules.teams.router import router as teams_router
+from .modules.leagues.routes.season_routes import router as season_router
+
 app.include_router(users_router, tags=["users"])
 app.include_router(teams_router, prefix="/teams", tags=["teams"])
 app.include_router(leagues_router, prefix="/leagues", tags=["leagues"])
+app.include_router(season_router, prefix="/api", tags=["seasons"])
 
 
 # 422 handler
 @app.exception_handler(RequestValidationError)
 async def validation_exception_handler(request: Request, exc: RequestValidationError):
-    try:
-        body = await request.body()
-        print(f"Raw request body (first 300B): {body[:300]!r}")
-    except Exception as e:
-        print(f"Error reading body: {e}")
-    return JSONResponse(status_code=422, content={"detail": "Error de validación", "errors": exc.errors()})
+    errors = []
+    for error in exc.errors():
+        error_dict = {
+            "loc": error["loc"],
+            "msg": error["msg"],
+            "type": error["type"]
+        }
+        # Incluir input solo si no es un objeto complejo
+        if "input" in error and not isinstance(error["input"], (dict, list)):
+            error_dict["input"] = error["input"]
+        errors.append(error_dict)
+    
+    return JSONResponse(
+        status_code=422, 
+        content={
+            "detail": "Error de validación", 
+            "errors": errors
+        }
+    )

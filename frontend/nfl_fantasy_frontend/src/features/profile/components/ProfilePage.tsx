@@ -1,12 +1,50 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useAuth } from '../../../shared/hooks/useAuth';
 import { useNavigate } from 'react-router-dom';
 
 const ProfilePage = () => {
 	const { user, logout } = useAuth();
 	const navigate = useNavigate();
+	const [isLoading, setIsLoading] = useState(true);
+	const [shouldCheckAuth, setShouldCheckAuth] = useState(true);
 
-	if (!user) {
+	useEffect(() => {
+		console.log('ProfilePage - Estado actual del usuario:', user);
+		console.log('ProfilePage - Token en localStorage:', localStorage.getItem('token'));
+		
+		// Si no hay usuario pero hay token, esperar más tiempo para que se cargue
+		if (!user && localStorage.getItem('token') && shouldCheckAuth) {
+			console.log('ProfilePage - Esperando carga del usuario desde token...');
+			const timer = setTimeout(() => {
+				console.log('ProfilePage - Finalizando carga, usuario:', user);
+				setIsLoading(false);
+				setShouldCheckAuth(false);
+			}, 1500); // Dar más tiempo si hay token pero no usuario
+			return () => clearTimeout(timer);
+		}
+		
+		// Si ya hay usuario o no hay token, cargar normalmente
+		const timer = setTimeout(() => {
+			console.log('ProfilePage - Finalizando carga, usuario:', user);
+			setIsLoading(false);
+		}, 500);
+
+		return () => clearTimeout(timer);
+	}, [user, shouldCheckAuth]);
+
+	useEffect(() => {
+		// Solo redirigir si ya terminó de cargar, no hay usuario Y no hay token
+		if (!isLoading && !user && !localStorage.getItem('token')) {
+			console.log('ProfilePage - Redirigiendo a login (no hay usuario ni token)');
+			navigate('/login');
+		} else if (!isLoading && !user && localStorage.getItem('token')) {
+			console.log('ProfilePage - Hay token pero no usuario, posible problema en AuthContext');
+			// Recargar la página para forzar reinicialización del contexto
+			window.location.reload();
+		}
+	}, [isLoading, user, navigate]);
+
+	if (isLoading) {
 		return (
 			<div style={{
 				minHeight: '100vh',
@@ -26,6 +64,11 @@ const ProfilePage = () => {
 				</div>
 			</div>
 		);
+	}
+
+	if (!user) {
+		console.log('ProfilePage - Usuario no disponible después de cargar');
+		return null;
 	}
 
 	const handleLogout = () => {
@@ -278,4 +321,3 @@ const ProfilePage = () => {
 };
 
 export default ProfilePage;
-// ...existing code from original ProfilePage.tsx...

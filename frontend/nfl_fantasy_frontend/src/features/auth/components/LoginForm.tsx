@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useAuth } from '../../../shared/hooks/useAuth';
 import { useNavigate, Link } from 'react-router-dom';
 import api from '../../../services/apiService';
+import axios from 'axios';
 
 const LoginForm = () => {
 	const [email, setEmail] = useState('');
@@ -13,22 +14,52 @@ const LoginForm = () => {
 
 	const handleSubmit = async (e: React.FormEvent) => {
 		e.preventDefault();
-		setLoading(true);
 		setError('');
-    
+		setLoading(true);
+
 		try {
-			// Cambiar a /login con JSON en lugar de /token con form-data
-			const response = await api.post('/login', {
+			// Paso 1: Login y obtener token
+			const loginResponse = await axios.post('http://localhost:8000/login', {
 				email: email,
 				password: password
+			}, {
+				headers: { 'Content-Type': 'application/json' }
 			});
-			
-			auth.login(response.data.access_token);
-			navigate('/profile');
+
+			const { access_token } = loginResponse.data;
+			localStorage.setItem('token', access_token);
+
+			// Paso 2: Obtener información del usuario
+			const userResponse = await axios.get('http://localhost:8000/users/me/', {
+				headers: { 
+					'Authorization': `Bearer ${access_token}` 
+				}
+			});
+
+			const userData = userResponse.data;
+			console.log('Usuario obtenido:', userData);
+			console.log('Rol del usuario:', userData.role);
+
+			// Actualizar el contexto con los datos del usuario (si tienes login en el contexto)
+			// login(userData);
+
+			// Paso 3: Redirigir según el rol
+			if (userData.role === 'admin') {
+				console.log('Redirigiendo a panel de admin');
+				navigate('/admin', { replace: true });
+			} else {
+				console.log('Redirigiendo a perfil normal');
+				navigate('/profile', { replace: true });
+			}
 		} catch (err: any) {
-			// Mostrar el mensaje específico del backend
-			const errorMessage = err.response?.data?.detail || 'Error al iniciar sesión.';
-			setError(errorMessage);
+			console.error('Error en login:', err);
+			if (err.response?.status === 403) {
+				setError('Cuenta bloqueada');
+			} else if (err.response?.status === 401) {
+				setError('Credenciales incorrectas');
+			} else {
+				setError(err.response?.data?.detail || 'Error al iniciar sesión');
+			}
 		} finally {
 			setLoading(false);
 		}

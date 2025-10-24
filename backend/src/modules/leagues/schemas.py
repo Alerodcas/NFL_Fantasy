@@ -1,5 +1,6 @@
-from pydantic import BaseModel, Field, field_validator
-from typing import Optional, Literal
+from pydantic import BaseModel, Field, field_validator, validator, model_validator, ConfigDict
+from typing import Optional, Literal, List
+from datetime import date, datetime
 
 _ALLOWED_TEAM_SIZES = {4, 6, 8, 10, 12, 14, 16, 18, 20}
 
@@ -42,3 +43,89 @@ class LeagueCreated(BaseModel):
     season_id: int
     slots_remaining: int
     commissioner_team_id: int
+
+
+class WeekCreate(BaseModel):
+    week_number: int
+    start_date: date
+    end_date: date
+    
+    @field_validator('week_number')
+    @classmethod
+    def validate_week_number(cls, v):
+        if v < 1:
+            raise ValueError('El número de semana debe ser mayor a 0')
+        return v
+
+class WeekResponse(BaseModel):
+    id: int
+    season_id: int
+    week_number: int
+    start_date: date
+    end_date: date
+    
+    model_config = ConfigDict(from_attributes=True)
+
+class SeasonCreate(BaseModel):
+    name: str
+    week_count: int
+    start_date: date
+    end_date: date
+    is_current: bool = False
+    weeks: List[WeekCreate] = []
+    
+    @field_validator('name')
+    @classmethod
+    def validate_name(cls, v):
+        if not v or len(v.strip()) == 0:
+            raise ValueError('El nombre es requerido')
+        if len(v) > 100:
+            raise ValueError('El nombre no puede exceder 100 caracteres')
+        return v.strip()
+    
+    @field_validator('week_count')
+    @classmethod
+    def validate_week_count(cls, v):
+        if v < 1 or v > 52:
+            raise ValueError('La cantidad de semanas debe estar entre 1 y 52')
+        return v
+    
+    @model_validator(mode='after')
+    def validate_model(self):
+        # Validar fechas
+        if self.end_date <= self.start_date:
+            raise ValueError('La fecha de fin debe ser posterior a la fecha de inicio')
+        
+        # Validar cantidad de semanas
+        if self.weeks and len(self.weeks) != self.week_count:
+            raise ValueError(f'La cantidad de semanas ({len(self.weeks)}) no coincide con week_count ({self.week_count})')
+        
+        return self
+
+class SeasonUpdate(BaseModel):
+    name: Optional[str] = None
+    is_current: Optional[bool] = None
+    
+    @field_validator('name')
+    @classmethod
+    def validate_name(cls, v):
+        if v is not None:
+            if len(v.strip()) == 0:
+                raise ValueError('El nombre no puede estar vacío')
+            if len(v) > 100:
+                raise ValueError('El nombre no puede exceder 100 caracteres')
+            return v.strip()
+        return v
+
+class SeasonResponse(BaseModel):
+    id: int
+    name: str
+    year: int
+    week_count: int
+    start_date: date
+    end_date: date
+    is_current: bool
+    created_by: int
+    weeks: List[WeekResponse] = []
+    
+    model_config = ConfigDict(from_attributes=True)

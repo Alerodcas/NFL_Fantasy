@@ -5,6 +5,8 @@ import LoginForm from './features/auth/components/LoginForm';
 import ProfilePage from './features/profile/components/ProfilePage';
 import TeamForm from './features/teams/components/TeamForm';
 import LeagueForm from "./features/leagues/components/LeagueForm";
+import AdminProfile from './features/admin/AdminProfile';
+import CreateSeason from './features/seasons/CreateSeason';
 import { AuthProvider } from './shared/context/AuthContext';
 import { useAuth } from './shared/hooks/useAuth';
 
@@ -33,7 +35,22 @@ function App() {
               </PrivateRoute>
             }
           />
-        
+          <Route
+            path="/admin"
+            element={
+              <PrivateRoute>
+                <AdminProfile />
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/admin/seasons/create"
+            element={
+              <PrivateRoute>
+                <CreateSeason />
+              </PrivateRoute>
+            }
+          />
           <Route
             path="/teams/new"
             element={
