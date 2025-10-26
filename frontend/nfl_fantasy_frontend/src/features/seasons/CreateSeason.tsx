@@ -33,10 +33,35 @@ export default function CreateSeason() {
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value, type, checked } = e.target;
+    const newValue = type === 'checkbox' ? checked : value;
     setFormData(prev => ({
       ...prev,
-      [name]: type === 'checkbox' ? checked : value
+      [name]: newValue
     }));
+
+    // Validación en tiempo real para fechas
+    if (name === 'start_date' || name === 'end_date') {
+      const currentFormData = { ...formData, [name]: newValue };
+      const startDate = new Date(currentFormData.start_date);
+      const endDate = new Date(currentFormData.end_date);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      if (endDate <= startDate) {
+        setError('La fecha de fin debe ser posterior a la fecha de inicio');
+      } else if (endDate < today) {
+        setError('La fecha de fin no puede estar en el pasado');
+      } else if (weeks.length > 0) {
+        const lastWeekEndDate = new Date(weeks[weeks.length - 1].end_date);
+        if (endDate < lastWeekEndDate) {
+          setError('La fecha de fin debe ser posterior o igual a la fecha de fin de la última semana generada');
+        } else {
+          setError(''); // Limpiar error si todo está bien
+        }
+      } else {
+        setError(''); // Limpiar error si todo está bien
+      }
+    }
   };
 
   const generateWeeks = () => {
@@ -63,7 +88,19 @@ export default function CreateSeason() {
     }
 
     setWeeks(generatedWeeks);
-    setError('');
+    
+    // Validar fecha fin después de generar semanas
+    if (formData.end_date) {
+      const endDate = new Date(formData.end_date);
+      const lastWeekEndDate = new Date(generatedWeeks[generatedWeeks.length - 1].end_date);
+      if (endDate < lastWeekEndDate) {
+        setError('La fecha de fin debe ser posterior o igual a la fecha de fin de la última semana generada');
+      } else {
+        setError('');
+      }
+    } else {
+      setError('');
+    }
   };
 
   const handleWeekChange = (index: number, field: keyof Week, value: string | number) => {
@@ -76,6 +113,42 @@ export default function CreateSeason() {
     e.preventDefault();
     setLoading(true);
     setError('');
+
+    // Validaciones
+    const startDate = new Date(formData.start_date);
+    const endDate = new Date(formData.end_date);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0); // Reset time to start of day
+
+    if (endDate <= startDate) {
+      setError('La fecha de fin debe ser posterior a la fecha de inicio');
+      setLoading(false);
+      return;
+    }
+
+    // Validar que no haya otra temporada actual si se marca como actual
+    if (formData.is_current) {
+      try {
+        const token = localStorage.getItem('token');
+        const seasonsResponse = await axios.get('http://localhost:8000/api/seasons/', {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        });
+        
+        const existingCurrentSeason = seasonsResponse.data.find((season: any) => season.is_current);
+        if (existingCurrentSeason) {
+          setError(`Ya existe una temporada actual: ${existingCurrentSeason.name}. Desmarca la opción "Marcar como temporada actual" o cambia la temporada existente.`);
+          setLoading(false);
+          return;
+        }
+      } catch (err: any) {
+        console.error('Error checking existing seasons:', err);
+        // Si no podemos verificar, permitimos continuar pero mostramos una advertencia
+        console.warn('No se pudo verificar temporadas existentes, procediendo con la creación...');
+      }
+    }
 
     try {
       const token = localStorage.getItem('token');
@@ -103,37 +176,95 @@ export default function CreateSeason() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="bg-white rounded-lg shadow-md p-6">
-          <div className="flex items-center justify-between mb-6">
-            <h1 className="text-3xl font-bold text-gray-900">
+    <div style={{
+      minHeight: '100vh',
+      backgroundColor: '#1a202c',
+      padding: '20px',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center'
+    }}>
+      <div style={{
+        width: '100%',
+        maxWidth: '800px',
+        margin: '0 auto',
+        backgroundColor: '#2d3748',
+        borderRadius: '12px',
+        boxShadow: '0 4px 20px rgba(0, 0, 0, 0.2)',
+        overflow: 'hidden'
+      }}>
+        <div style={{
+          backgroundColor: '#4a5568',
+          color: '#e2e8f0',
+          padding: '30px',
+          textAlign: 'center'
+        }}>
+          <div style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            marginBottom: '20px'
+          }}>
+            <h1 style={{
+              margin: '0',
+              fontSize: '28px',
+              fontWeight: '600'
+            }}>
               Crear Nueva Temporada
             </h1>
             <button
               onClick={() => navigate('/admin')}
-              className="text-gray-600 hover:text-gray-900"
+              style={{
+                color: '#a0aec0',
+                background: 'none',
+                border: 'none',
+                cursor: 'pointer',
+                fontSize: '16px'
+              }}
             >
               Volver
             </button>
           </div>
+        </div>
 
+        <div style={{ padding: '40px' }}>
           {error && (
-            <div className="mb-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
+            <div style={{
+              backgroundColor: 'rgba(255, 100, 100, 0.1)',
+              color: '#ff8a8a',
+              padding: '12px',
+              borderRadius: '6px',
+              marginBottom: '20px',
+              border: '1px solid #c33'
+            }}>
               {error}
             </div>
           )}
 
-          <form onSubmit={handleSubmit} className="space-y-6">
+          <form onSubmit={handleSubmit}>
             {/* Información Básica */}
-            <div className="border-b pb-6">
-              <h2 className="text-xl font-semibold text-gray-900 mb-4">
+            <div style={{ marginBottom: '30px' }}>
+              <h2 style={{
+                color: '#e2e8f0',
+                fontSize: '20px',
+                fontWeight: '600',
+                marginBottom: '20px'
+              }}>
                 Información de la Temporada
               </h2>
               
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
+                gap: '20px'
+              }}>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label style={{
+                    display: 'block',
+                    marginBottom: '8px',
+                    fontWeight: '500',
+                    color: '#a0aec0'
+                  }}>
                     Nombre de la Temporada *
                   </label>
                   <input
@@ -143,13 +274,30 @@ export default function CreateSeason() {
                     onChange={handleInputChange}
                     required
                     maxLength={100}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    style={{
+                      width: '100%',
+                      padding: '12px',
+                      border: '2px solid #4a5568',
+                      borderRadius: '6px',
+                      fontSize: '16px',
+                      transition: 'border-color 0.3s',
+                      outline: 'none',
+                      backgroundColor: '#1a202c',
+                      color: '#e2e8f0'
+                    }}
+                    onFocus={(e) => e.target.style.borderColor = '#63b3ed'}
+                    onBlur={(e) => e.target.style.borderColor = '#4a5568'}
                     placeholder="Ej: NFL 2024-2025"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label style={{
+                    display: 'block',
+                    marginBottom: '8px',
+                    fontWeight: '500',
+                    color: '#a0aec0'
+                  }}>
                     Cantidad de Semanas *
                   </label>
                   <input
@@ -160,12 +308,29 @@ export default function CreateSeason() {
                     required
                     min={1}
                     max={52}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    style={{
+                      width: '100%',
+                      padding: '12px',
+                      border: '2px solid #4a5568',
+                      borderRadius: '6px',
+                      fontSize: '16px',
+                      transition: 'border-color 0.3s',
+                      outline: 'none',
+                      backgroundColor: '#1a202c',
+                      color: '#e2e8f0'
+                    }}
+                    onFocus={(e) => e.target.style.borderColor = '#63b3ed'}
+                    onBlur={(e) => e.target.style.borderColor = '#4a5568'}
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label style={{
+                    display: 'block',
+                    marginBottom: '8px',
+                    fontWeight: '500',
+                    color: '#a0aec0'
+                  }}>
                     Fecha de Inicio *
                   </label>
                   <input
@@ -174,12 +339,29 @@ export default function CreateSeason() {
                     value={formData.start_date}
                     onChange={handleInputChange}
                     required
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    style={{
+                      width: '100%',
+                      padding: '12px',
+                      border: '2px solid #4a5568',
+                      borderRadius: '6px',
+                      fontSize: '16px',
+                      transition: 'border-color 0.3s',
+                      outline: 'none',
+                      backgroundColor: '#1a202c',
+                      color: '#e2e8f0'
+                    }}
+                    onFocus={(e) => e.target.style.borderColor = '#63b3ed'}
+                    onBlur={(e) => e.target.style.borderColor = '#4a5568'}
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label style={{
+                    display: 'block',
+                    marginBottom: '8px',
+                    fontWeight: '500',
+                    color: '#a0aec0'
+                  }}>
                     Fecha de Fin *
                   </label>
                   <input
@@ -188,36 +370,72 @@ export default function CreateSeason() {
                     value={formData.end_date}
                     onChange={handleInputChange}
                     required
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    style={{
+                      width: '100%',
+                      padding: '12px',
+                      border: '2px solid #4a5568',
+                      borderRadius: '6px',
+                      fontSize: '16px',
+                      transition: 'border-color 0.3s',
+                      outline: 'none',
+                      backgroundColor: '#1a202c',
+                      color: '#e2e8f0'
+                    }}
+                    onFocus={(e) => e.target.style.borderColor = '#63b3ed'}
+                    onBlur={(e) => e.target.style.borderColor = '#4a5568'}
                   />
                 </div>
               </div>
 
-              <div className="mt-4">
-                <label className="flex items-center">
+              <div style={{ marginTop: '20px' }}>
+                <label style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  color: '#a0aec0'
+                }}>
                   <input
                     type="checkbox"
                     name="is_current"
                     checked={formData.is_current}
                     onChange={handleInputChange}
-                    className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                    style={{
+                      width: '16px',
+                      height: '16px',
+                      marginRight: '8px',
+                      accentColor: '#63b3ed'
+                    }}
                   />
-                  <span className="ml-2 text-sm text-gray-700">
-                    Marcar como temporada actual
-                  </span>
+                  Marcar como temporada actual
                 </label>
               </div>
             </div>
 
             {/* Generar Semanas */}
-            <div className="border-b pb-6">
-              <h2 className="text-xl font-semibold text-gray-900 mb-4">
+            <div style={{ marginBottom: '30px' }}>
+              <h2 style={{
+                color: '#e2e8f0',
+                fontSize: '20px',
+                fontWeight: '600',
+                marginBottom: '20px'
+              }}>
                 Configuración de Semanas
               </h2>
               <button
                 type="button"
                 onClick={generateWeeks}
-                className="bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-6 rounded-lg transition-colors"
+                style={{
+                  padding: '12px 24px',
+                  backgroundColor: '#68d391',
+                  color: '#1a202c',
+                  border: 'none',
+                  borderRadius: '6px',
+                  fontSize: '16px',
+                  fontWeight: '600',
+                  cursor: 'pointer',
+                  transition: 'background-color 0.3s'
+                }}
+                onMouseOver={(e) => (e.target as HTMLElement).style.backgroundColor = '#5cb85c'}
+                onMouseOut={(e) => (e.target as HTMLElement).style.backgroundColor = '#68d391'}
               >
                 Generar Semanas Automáticamente
               </button>
@@ -226,44 +444,119 @@ export default function CreateSeason() {
             {/* Lista de Semanas */}
             {weeks.length > 0 && (
               <div>
-                <h2 className="text-xl font-semibold text-gray-900 mb-4">
+                <h2 style={{
+                  color: '#e2e8f0',
+                  fontSize: '20px',
+                  fontWeight: '600',
+                  marginBottom: '20px'
+                }}>
                   Semanas ({weeks.length})
                 </h2>
-                <div className="max-h-96 overflow-y-auto space-y-3">
+                <div style={{
+                  maxHeight: '400px',
+                  overflowY: 'auto',
+                  display: 'grid',
+                  gap: '15px'
+                }}>
                   {weeks.map((week, index) => (
-                    <div key={index} className="bg-gray-50 p-4 rounded-lg">
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div key={index} style={{
+                      backgroundColor: '#1a202c',
+                      padding: '20px',
+                      borderRadius: '8px',
+                      border: '1px solid #4a5568'
+                    }}>
+                      <div style={{
+                        display: 'grid',
+                        gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))',
+                        gap: '15px'
+                      }}>
                         <div>
-                          <label className="block text-xs font-medium text-gray-600 mb-1">
+                          <label style={{
+                            display: 'block',
+                            fontWeight: '600',
+                            color: '#a0aec0',
+                            marginBottom: '8px',
+                            fontSize: '14px',
+                            textTransform: 'uppercase',
+                            letterSpacing: '0.5px'
+                          }}>
                             Semana #{week.week_number}
                           </label>
                           <input
                             type="number"
                             value={week.week_number}
-                            className="w-full px-3 py-2 border border-gray-300 rounded text-sm bg-gray-100"
+                            style={{
+                              width: '100%',
+                              padding: '10px',
+                              border: '2px solid #4a5568',
+                              borderRadius: '6px',
+                              fontSize: '14px',
+                              backgroundColor: '#2d3748',
+                              color: '#e2e8f0'
+                            }}
                             readOnly
                           />
                         </div>
                         <div>
-                          <label className="block text-xs font-medium text-gray-600 mb-1">
+                          <label style={{
+                            display: 'block',
+                            fontWeight: '600',
+                            color: '#a0aec0',
+                            marginBottom: '8px',
+                            fontSize: '14px',
+                            textTransform: 'uppercase',
+                            letterSpacing: '0.5px'
+                          }}>
                             Fecha Inicio
                           </label>
                           <input
                             type="date"
                             value={week.start_date}
                             onChange={(e) => handleWeekChange(index, 'start_date', e.target.value)}
-                            className="w-full px-3 py-2 border border-gray-300 rounded text-sm"
+                            style={{
+                              width: '100%',
+                              padding: '10px',
+                              border: '2px solid #4a5568',
+                              borderRadius: '6px',
+                              fontSize: '14px',
+                              transition: 'border-color 0.3s',
+                              outline: 'none',
+                              backgroundColor: '#1a202c',
+                              color: '#e2e8f0'
+                            }}
+                            onFocus={(e) => e.target.style.borderColor = '#63b3ed'}
+                            onBlur={(e) => e.target.style.borderColor = '#4a5568'}
                           />
                         </div>
                         <div>
-                          <label className="block text-xs font-medium text-gray-600 mb-1">
+                          <label style={{
+                            display: 'block',
+                            fontWeight: '600',
+                            color: '#a0aec0',
+                            marginBottom: '8px',
+                            fontSize: '14px',
+                            textTransform: 'uppercase',
+                            letterSpacing: '0.5px'
+                          }}>
                             Fecha Fin
                           </label>
                           <input
                             type="date"
                             value={week.end_date}
                             onChange={(e) => handleWeekChange(index, 'end_date', e.target.value)}
-                            className="w-full px-3 py-2 border border-gray-300 rounded text-sm"
+                            style={{
+                              width: '100%',
+                              padding: '10px',
+                              border: '2px solid #4a5568',
+                              borderRadius: '6px',
+                              fontSize: '14px',
+                              transition: 'border-color 0.3s',
+                              outline: 'none',
+                              backgroundColor: '#1a202c',
+                              color: '#e2e8f0'
+                            }}
+                            onFocus={(e) => e.target.style.borderColor = '#63b3ed'}
+                            onBlur={(e) => e.target.style.borderColor = '#4a5568'}
                           />
                         </div>
                       </div>
@@ -274,18 +567,51 @@ export default function CreateSeason() {
             )}
 
             {/* Botones */}
-            <div className="flex justify-end space-x-4 pt-6">
+            <div style={{
+              display: 'flex',
+              justifyContent: 'flex-end',
+              gap: '15px',
+              marginTop: '30px'
+            }}>
               <button
                 type="button"
                 onClick={() => navigate('/admin')}
-                className="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 font-semibold transition-colors"
+                style={{
+                  padding: '12px 24px',
+                  border: '2px solid #4a5568',
+                  borderRadius: '6px',
+                  fontSize: '16px',
+                  fontWeight: '600',
+                  cursor: 'pointer',
+                  transition: 'all 0.3s',
+                  backgroundColor: 'transparent',
+                  color: '#a0aec0'
+                }}
+                onMouseOver={(e) => {
+                  (e.target as HTMLElement).style.backgroundColor = '#4a5568';
+                  (e.target as HTMLElement).style.color = '#e2e8f0';
+                }}
+                onMouseOut={(e) => {
+                  (e.target as HTMLElement).style.backgroundColor = 'transparent';
+                  (e.target as HTMLElement).style.color = '#a0aec0';
+                }}
               >
                 Cancelar
               </button>
               <button
                 type="submit"
                 disabled={loading || weeks.length === 0}
-                className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
+                style={{
+                  padding: '12px 24px',
+                  backgroundColor: loading || weeks.length === 0 ? '#4a5568' : '#63b3ed',
+                  color: loading || weeks.length === 0 ? '#a0aec0' : '#1a202c',
+                  border: 'none',
+                  borderRadius: '6px',
+                  fontSize: '16px',
+                  fontWeight: '600',
+                  cursor: loading || weeks.length === 0 ? 'not-allowed' : 'pointer',
+                  transition: 'background-color 0.3s'
+                }}
               >
                 {loading ? 'Creando...' : 'Crear Temporada'}
               </button>
