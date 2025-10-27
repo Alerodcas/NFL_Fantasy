@@ -1,0 +1,317 @@
+nfl-fantasy/
+│
+├── backend/                                    # Backend Python + FastAPI
+│   ├── src/
+│   │   ├── config/                            # Configuración centralizada
+│   │   │   ├── database.py                    # Configuración PostgreSQL
+│   │   │   ├── redis.py                       # Configuración Redis
+│   │   │   ├── auth.py                        # JWT, password hashing settings
+│   │   │   ├── logger.py                      # Logging configuration
+│   │   │   └── settings.py                    # Variables de entorno (Pydantic Settings)
+│   │   │
+│   │   ├── core/                              # Núcleo compartido
+│   │   │   ├── database/
+│   │   │   │   ├── session.py                 # Database session factory
+│   │   │   │   ├── base.py                    # Base class para modelos
+│   │   │   │   └── migrations/                # Alembic migrations
+│   │   │   │       ├── env.py
+│   │   │   │       ├── versions/
+│   │   │   │       │   ├── 001_create_users.py
+│   │   │   │       │   ├── 002_create_leagues.py
+│   │   │   │       │   ├── 003_create_teams.py
+│   │   │   │       │   └── 004_create_seasons.py
+│   │   │   │       └── seeds/                 # Datos iniciales
+│   │   │   │           └── default_data.sql
+│   │   │   │
+│   │   │   ├── middleware/                    # Middleware global
+│   │   │   │   ├── auth.py                    # Verificación JWT
+│   │   │   │   ├── error_handler.py           # Manejo de errores
+│   │   │   │   ├── rate_limit.py              # Rate limiting (P5)
+│   │   │   │   ├── logger.py                  # Request logging
+│   │   │   │   └── cors.py                    # CORS config
+│   │   │   │
+│   │   │   ├── exceptions/                    # Excepciones personalizadas
+│   │   │   │   ├── base.py                    # Excepción base
+│   │   │   │   ├── validation.py              # Errores de validación
+│   │   │   │   ├── authentication.py          # Errores de auth
+│   │   │   │   └── not_found.py               # Recursos no encontrados
+│   │   │   │
+│   │   │   ├── dependencies/                  # Dependencias FastAPI
+│   │   │   │   ├── auth.py                    # get_current_user dependency
+│   │   │   │   └── database.py                # get_db dependency
+│   │   │   │
+│   │   │   └── utils/                         # Utilidades compartidas
+│   │   │       ├── password.py                # Hash/verify passwords
+│   │   │       ├── jwt.py                     # Generate/verify tokens
+│   │   │       ├── response.py                # Respuestas estandarizadas
+│   │   │       └── pagination.py              # Paginación
+│   │   │
+│   │   ├── modules/                           # Módulos por feature
+│   │   │   │
+│   │   │   ├── auth/                          # Feature: Autenticación
+│   │   │   │   ├── router.py                  # FastAPI router
+│   │   │   │   ├── service.py                 # Lógica de negocio
+│   │   │   │   ├── repository.py              # Acceso a datos
+│   │   │   │   ├── schemas.py                 # Pydantic schemas
+│   │   │   │   │   ├── LoginRequest
+│   │   │   │   │   ├── RegisterRequest
+│   │   │   │   │   └── AuthResponse
+│   │   │   │   └── tests/
+│   │   │   │       ├── test_service.py
+│   │   │   │       └── test_router.py
+│   │   │   │
+│   │   │   ├── users/                         # Feature: Gestión de usuarios
+│   │   │   │   ├── router.py
+│   │   │   │   ├── service.py
+│   │   │   │   ├── repository.py
+│   │   │   │   ├── models.py                  # SQLAlchemy models
+│   │   │   │   ├── schemas.py                 # Pydantic schemas
+│   │   │   │   │   ├── CreateUserRequest
+│   │   │   │   │   ├── UpdateUserRequest
+│   │   │   │   │   └── UserResponse
+│   │   │   │   └── tests/
+│   │   │   │       └── test_service.py
+│   │   │   │
+│   │   │   ├── leagues/                       # Feature: Crear/Buscar Liga
+│   │   │   │   ├── router.py                  # POST /leagues, GET /leagues/search
+│   │   │   │   ├── service.py                 # Lógica crear liga, verificar password
+│   │   │   │   ├── repository.py              # CRUD leagues
+│   │   │   │   ├── models.py                  # SQLAlchemy models
+│   │   │   │   ├── schemas.py                 # Pydantic schemas
+│   │   │   │   │   ├── CreateLeagueRequest    # Nombre, config, password
+│   │   │   │   │   ├── JoinLeagueRequest      # League ID + password
+│   │   │   │   │   ├── SearchLeagueRequest    # Filtros de búsqueda
+│   │   │   │   │   └── LeagueResponse
+│   │   │   │   └── tests/
+│   │   │   │       ├── test_service.py
+│   │   │   │       └── test_router.py
+│   │   │   │
+│   │   │   ├── seasons/                       # Feature: Crear Temporada
+│   │   │   │   ├── router.py                  # POST /seasons
+│   │   │   │   ├── service.py                 # Validar fechas, generar semanas
+│   │   │   │   ├── repository.py
+│   │   │   │   ├── models.py                  # SQLAlchemy models
+│   │   │   │   ├── schemas.py                 # Pydantic schemas
+│   │   │   │   │   ├── CreateSeasonRequest    # Año, fechas, semanas
+│   │   │   │   │   └── SeasonResponse
+│   │   │   │   └── tests/
+│   │   │   │       └── test_service.py
+│   │   │   │
+│   │   │   └── teams/                         # Feature: Crear Equipo
+│   │   │       ├── router.py                  # POST /teams
+│   │   │       ├── service.py                 # Validar nombre único, owner
+│   │   │       ├── repository.py
+│   │   │       ├── models.py                  # SQLAlchemy models
+│   │   │       ├── schemas.py                 # Pydantic schemas
+│   │   │       │   ├── CreateTeamRequest      # Nombre, liga, owner
+│   │   │       │   └── TeamResponse
+│   │   │       └── tests/
+│   │   │           └── test_service.py
+│   │   │
+│   │   ├── api/                               # Enrutador principal
+│   │   │   ├── v1/
+│   │   │   │   └── router.py                  # Agrega todas las rutas v1
+│   │   │   └── dependencies.py                # Dependencias globales de API
+│   │   │
+│   │   └── main.py                            # FastAPI app setup y entry point
+│   │
+│   ├── tests/                                 # Tests
+│   │   ├── integration/
+│   │   │   ├── test_auth.py
+│   │   │   ├── test_league.py
+│   │   │   └── test_team.py
+│   │   ├── unit/
+│   │   │   └── test_utils.py
+│   │   ├── conftest.py                        # Pytest fixtures
+│   │   └── test_config.py                     # Configuración de tests
+│   │
+│   ├── scripts/                               # Scripts de utilidad
+│   │   ├── seed_database.py                   # Poblar BD con datos test
+│   │   ├── run_migrations.py                  # Ejecutar migraciones
+│   │   └── generate_secret_key.py             # Generar secretos
+│   │
+│   ├── alembic.ini                            # Configuración Alembic
+│   ├── .env.example                           # Ejemplo de variables
+│   ├── .env.development                       # Variables de desarrollo
+│   ├── .env.test                              # Variables de test
+│   ├── .gitignore
+│   ├── requirements.txt                       # Dependencias Python
+│   ├── requirements-dev.txt                   # Dependencias de desarrollo
+│   ├── pyproject.toml                         # Poetry config (alternativo)
+│   ├── pytest.ini                             # Pytest config
+│   └── README.md
+│
+│
+├── frontend/                                  # Frontend React + TypeScript
+│   ├── public/
+│   │   ├── index.html
+│   │   ├── favicon.ico
+│   │   └── assets/
+│   │       └── images/
+│   │
+│   ├── src/
+│   │   ├── config/                            # Configuración del cliente
+│   │   │   ├── api.config.ts                  # Base URL, timeout
+│   │   │   ├── routes.config.ts               # Rutas de la app
+│   │   │   └── constants.ts                   # Constantes globales
+│   │   │
+│   │   ├── features/                          # Features por módulo
+│   │   │   │
+│   │   │   ├── auth/                          # Feature: Autenticación
+│   │   │   │   ├── components/
+│   │   │   │   │   ├── LoginForm.tsx          # Formulario login
+│   │   │   │   │   ├── RegisterForm.tsx       # Formulario registro
+│   │   │   │   │   └── AuthLayout.tsx         # Layout auth pages
+│   │   │   │   ├── hooks/
+│   │   │   │   │   ├── useAuth.ts             # Hook de autenticación
+│   │   │   │   │   ├── useLogin.ts            # Hook login mutation
+│   │   │   │   │   └── useRegister.ts         # Hook register mutation
+│   │   │   │   ├── services/
+│   │   │   │   │   └── auth.service.ts        # API calls
+│   │   │   │   ├── store/
+│   │   │   │   │   └── authStore.ts           # Zustand store
+│   │   │   │   ├── types/
+│   │   │   │   │   ├── auth.types.ts
+│   │   │   │   │   └── user.types.ts
+│   │   │   │   ├── utils/
+│   │   │   │   │   └── token.utils.ts         # Local storage JWT
+│   │   │   │   └── pages/
+│   │   │   │       ├── LoginPage.tsx
+│   │   │   │       └── RegisterPage.tsx
+│   │   │   │
+│   │   │   ├── leagues/                       # Feature: Ligas
+│   │   │   │   ├── components/
+│   │   │   │   │   ├── CreateLeagueForm.tsx   # Form crear liga
+│   │   │   │   │   ├── SearchLeagueForm.tsx   # Form buscar liga
+│   │   │   │   │   ├── JoinLeagueModal.tsx    # Modal unirse con password
+│   │   │   │   │   ├── LeagueCard.tsx         # Card individual
+│   │   │   │   │   └── LeagueList.tsx         # Lista de ligas
+│   │   │   │   ├── hooks/
+│   │   │   │   │   ├── useCreateLeague.ts     # Mutation crear
+│   │   │   │   │   ├── useSearchLeagues.ts    # Query buscar
+│   │   │   │   │   └── useJoinLeague.ts       # Mutation unirse
+│   │   │   │   ├── services/
+│   │   │   │   │   └── league.service.ts      # API calls
+│   │   │   │   ├── store/
+│   │   │   │   │   └── leagueStore.ts         # Zustand store
+│   │   │   │   ├── types/
+│   │   │   │   │   └── league.types.ts
+│   │   │   │   └── pages/
+│   │   │   │       ├── CreateLeaguePage.tsx
+│   │   │   │       ├── SearchLeaguePage.tsx
+│   │   │   │       └── LeagueDetailsPage.tsx
+│   │   │   │
+│   │   │   ├── seasons/                       # Feature: Temporadas
+│   │   │   │   ├── components/
+│   │   │   │   │   ├── CreateSeasonForm.tsx   # Form crear temporada
+│   │   │   │   │   └── SeasonCard.tsx
+│   │   │   │   ├── hooks/
+│   │   │   │   │   └── useCreateSeason.ts
+│   │   │   │   ├── services/
+│   │   │   │   │   └── season.service.ts
+│   │   │   │   ├── types/
+│   │   │   │   │   └── season.types.ts
+│   │   │   │   └── pages/
+│   │   │   │       └── CreateSeasonPage.tsx
+│   │   │   │
+│   │   │   └── teams/                         # Feature: Equipos
+│   │   │       ├── components/
+│   │   │       │   ├── CreateTeamForm.tsx     # Form crear equipo
+│   │   │       │   ├── TeamCard.tsx
+│   │   │       │   └── TeamList.tsx
+│   │   │       ├── hooks/
+│   │   │       │   └── useCreateTeam.ts
+│   │   │       ├── services/
+│   │   │       │   └── team.service.ts
+│   │   │       ├── types/
+│   │   │       │   └── team.types.ts
+│   │   │       └── pages/
+│   │   │           └── CreateTeamPage.tsx
+│   │   │
+│   │   ├── shared/                            # Código compartido
+│   │   │   ├── components/
+│   │   │   │   ├── ui/                        # Componentes UI base
+│   │   │   │   │   ├── Button.tsx
+│   │   │   │   │   ├── Input.tsx
+│   │   │   │   │   ├── Card.tsx
+│   │   │   │   │   ├── Modal.tsx
+│   │   │   │   │   ├── Spinner.tsx
+│   │   │   │   │   └── Alert.tsx
+│   │   │   │   ├── layout/
+│   │   │   │   │   ├── Header.tsx
+│   │   │   │   │   ├── Footer.tsx
+│   │   │   │   │   ├── Sidebar.tsx
+│   │   │   │   │   └── MainLayout.tsx
+│   │   │   │   └── common/
+│   │   │   │       ├── ErrorBoundary.tsx
+│   │   │   │       ├── Loading.tsx
+│   │   │   │       └── NotFound.tsx
+│   │   │   │
+│   │   │   ├── hooks/
+│   │   │   │   ├── useDebounce.ts
+│   │   │   │   ├── useLocalStorage.ts
+│   │   │   │   └── useToast.ts
+│   │   │   │
+│   │   │   ├── utils/
+│   │   │   │   ├── validation.utils.ts        # Validaciones
+│   │   │   │   ├── format.utils.ts            # Formateo de datos
+│   │   │   │   └── api.utils.ts               # Helpers API
+│   │   │   │
+│   │   │   └── types/
+│   │   │       ├── common.types.ts
+│   │   │       └── api.types.ts
+│   │   │
+│   │   ├── services/                          # Servicios globales
+│   │   │   ├── api.service.ts                 # Axios instance base
+│   │   │   ├── websocket.service.ts           # Socket.io cliente (futuro)
+│   │   │   └── storage.service.ts             # LocalStorage wrapper
+│   │   │
+│   │   ├── store/                             # Store global Zustand
+│   │   │   ├── index.ts                       # Root store
+│   │   │   └── slices/                        # Slices de estado
+│   │   │       └── globalSlice.ts
+│   │   │
+│   │   ├── routes/                            # Configuración de rutas
+│   │   │   ├── AppRoutes.tsx                  # Todas las rutas
+│   │   │   ├── PrivateRoute.tsx               # Rutas protegidas
+│   │   │   └── PublicRoute.tsx                # Rutas públicas
+│   │   │
+│   │   ├── styles/                            # Estilos globales
+│   │   │   ├── globals.css                    # CSS global + Tailwind
+│   │   │   └── variables.css                  # CSS variables
+│   │   │
+│   │   ├── App.tsx                            # Componente raíz
+│   │   ├── main.tsx                           # Entry point
+│   │   └── vite-env.d.ts                      # Vite types
+│   │
+│   ├── .env.example
+│   ├── .env.development
+│   ├── .gitignore
+│   ├── package.json
+│   ├── tsconfig.json
+│   ├── tsconfig.node.json
+│   ├── vite.config.ts                         # Vite config
+│   ├── tailwind.config.js                     # Tailwind config
+│   ├── postcss.config.js
+│   └── README.md
+│
+│
+├── docs/                                      # Documentación
+│   ├── architecture/
+│   │   ├── adr/                               # Architecture Decision Records
+│   │   │   ├── 001-microservices-architecture.md
+│   │   │   ├── 002-python-fastapi-stack.md
+│   │   │   └── 003-react-frontend.md
+│   │   ├── diagrams/
+│   │   │   ├── system-architecture.png
+│   │   │   └── database-schema.png
+│   │   └── api/
+│   │       └── openapi.yaml                   # OpenAPI spec (generado por FastAPI)
+│   ├── setup/
+│   │   ├── local-development.md
+│   │   └── deployment.md
+│   └── README.md
+│
+├── docker-compose.yml                         # Docker compose para desarrollo
+├── .gitignore
+└── README.md

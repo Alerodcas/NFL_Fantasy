@@ -1,14 +1,18 @@
 import React, { ReactNode } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import RegisterForm from './components/RegisterForm';
-import LoginForm from './components/LoginForm';
-import ProfilePage from './components/ProfilePage';
-import TeamForm from './components/TeamForm';
-import { AuthProvider } from './context/AuthContext';
-import { useAuth } from './hooks/useAuth';
+import RegisterForm from './features/auth/components/RegisterForm';
+import LoginForm from './features/auth/components/LoginForm';
+import ProfilePage from './features/profile/components/ProfilePage';
+import TeamForm from './features/teams/components/TeamForm';
+import LeagueForm from "./features/leagues/components/LeagueForm";
+import JoinLeague from "./features/leagues/components/JoinLeague";
+import AdminProfile from './features/admin/AdminProfile';
+import CreateSeason from './features/seasons/CreateSeason';
+import { AuthProvider } from './shared/context/AuthContext';
+import { useAuth } from './shared/hooks/useAuth';
 
 // Componente para proteger rutas que requieren autenticación
-const PrivateRoute = ({ children }: { children: ReactNode }) => {
+const PrivateRoute = ({ children }: { children: JSX.Element }): JSX.Element | null => {
   const { token } = useAuth();
   // use the same localStorage key used by AuthContext/login ("token")
   const stored = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
@@ -32,12 +36,36 @@ function App() {
               </PrivateRoute>
             }
           />
-        
+          <Route
+            path="/admin"
+            element={
+              <PrivateRoute>
+                <AdminProfile />
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/admin/seasons/create"
+            element={
+              <PrivateRoute>
+                <CreateSeason />
+              </PrivateRoute>
+            }
+          />
           <Route
             path="/teams/new"
             element={
               <PrivateRoute>
                 <TeamForm />
+              </PrivateRoute>
+            }
+          />
+          <Route path="/create-league" element={<LeagueForm />} />
+          <Route
+            path="/join-league"
+            element={
+              <PrivateRoute>
+                <JoinLeague />
               </PrivateRoute>
             }
           />
