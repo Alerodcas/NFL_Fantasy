@@ -35,13 +35,14 @@ MEDIA_DIR.mkdir(parents=True, exist_ok=True)
 app.mount("/media", StaticFiles(directory=str(MEDIA_DIR)), name="media")
 
 # Routers
+
 from .modules.users.router import router as users_router
 from .modules.teams.router import router as teams_router
 from .modules.leagues.routes.season_routes import router as season_router
 
 app.include_router(users_router, tags=["users"])
 app.include_router(teams_router, prefix="/teams", tags=["teams"])
-app.include_router(leagues_router, prefix="/leagues", tags=["leagues"])
+app.include_router(leagues_router, tags=["leagues"])
 app.include_router(season_router, prefix="/api", tags=["seasons"])
 
 

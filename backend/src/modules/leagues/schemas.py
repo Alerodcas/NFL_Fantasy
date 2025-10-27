@@ -12,7 +12,7 @@ class LeagueCreate(BaseModel):
     playoff_format: Literal[4, 6]
     allow_decimal_scoring: bool = True
 
-    team_name: str = Field(..., min_length=2, max_length=128)
+    team_id: int = Field(..., ge=1)
 
     @field_validator("max_teams")
     @classmethod
@@ -129,3 +129,51 @@ class SeasonResponse(BaseModel):
     weeks: List[WeekResponse] = []
     
     model_config = ConfigDict(from_attributes=True)
+
+
+class LeagueSearchFilters(BaseModel):
+    name: Optional[str] = Field(None, description="Búsqueda parcial por nombre de liga")
+    season_id: Optional[int] = Field(None, description="Filtrar por temporada")
+    status: Optional[Literal["pre_draft", "draft", "in_season", "completed"]] = Field(None, description="Filtrar por estado")
+    
+
+class LeagueSearchResult(BaseModel):
+    id: int
+    uuid: Optional[str] = None
+    name: str
+    description: Optional[str] = None
+    status: str
+    max_teams: int
+    season_id: int
+    season_name: str
+    slots_available: int
+    created_at: datetime
+    
+    model_config = ConfigDict(from_attributes=True)
+
+
+class JoinLeagueRequest(BaseModel):
+    password: str = Field(..., min_length=8, max_length=12)
+    user_alias: str = Field(..., min_length=1, max_length=50, description="Alias del usuario en esta liga")
+    team_id: int = Field(..., ge=1, description="ID del equipo a usar en la liga")
+    
+    @field_validator("user_alias")
+    @classmethod
+    def validate_user_alias(cls, v: str):
+        v = v.strip()
+        if not v:
+            raise ValueError("El alias no puede estar vacío")
+        if len(v) < 1 or len(v) > 50:
+            raise ValueError("El alias debe tener entre 1 y 50 caracteres")
+        return v
+
+
+class JoinLeagueResponse(BaseModel):
+    message: str
+    league_id: int
+    team_id: int
+    user_alias: str
+    joined_at: datetime
+    
+    model_config = ConfigDict(from_attributes=True)
+

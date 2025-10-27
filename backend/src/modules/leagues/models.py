@@ -51,3 +51,22 @@ class League(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     
     season = relationship("Season", back_populates="leagues")
+    members = relationship("LeagueMember", back_populates="league")
+
+
+class LeagueMember(Base):
+    __tablename__ = "league_members"
+    id = Column(Integer, primary_key=True)
+    league_id = Column(Integer, ForeignKey("leagues.id", ondelete="CASCADE"), nullable=False)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    team_id = Column(Integer, ForeignKey("teams.id", ondelete="CASCADE"), nullable=False)
+    user_alias = Column(String(50), nullable=False)
+    joined_at = Column(DateTime(timezone=True), server_default=func.now())
+    
+    league = relationship("League", back_populates="members")
+    
+    __table_args__ = (
+        # Un usuario solo puede estar una vez en una liga
+        # Un equipo solo puede estar en una liga
+        # El alias debe ser único dentro de la liga
+    )

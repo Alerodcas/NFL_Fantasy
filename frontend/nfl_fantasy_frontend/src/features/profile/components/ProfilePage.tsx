@@ -82,6 +82,9 @@ const ProfilePage = () => {
 	const handleCreateLeague = () => {
 		navigate('/create-league');
 	};
+	const handleJoinLeague = () => {
+		navigate('/join-league');
+	};
 
 	return (
 		<div style={{
@@ -273,7 +276,8 @@ const ProfilePage = () => {
 							fontSize: '16px',
 							fontWeight: '600',
 							cursor: 'pointer',
-							transition: 'background-color 0.3s'
+							transition: 'background-color 0.3s',
+							marginBottom: '10px'
 						}}
 					>
 						Crear Equipo
@@ -291,10 +295,30 @@ const ProfilePage = () => {
 							fontSize: '16px',
 							fontWeight: '600',
 							cursor: 'pointer',
-							transition: 'background-color 0.3s'
+							transition: 'background-color 0.3s',
+							marginBottom: '10px'
 						}}
 					>
 						Crear Liga
+					</button>
+
+					<button
+						onClick={handleJoinLeague}
+						style={{
+							width: '100%',
+							padding: '14px',
+							backgroundColor: '#68d391',
+							color: 'white',
+							border: 'none',
+							borderRadius: '6px',
+							fontSize: '16px',
+							fontWeight: '600',
+							cursor: 'pointer',
+							transition: 'background-color 0.3s',
+							marginBottom: '10px'
+						}}
+					>
+						Unirse a Liga
 					</button>
 
 					<button

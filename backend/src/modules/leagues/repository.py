@@ -53,21 +53,26 @@ def create_league_with_commissioner_team(
 ):
     # Validar nombre de liga único
     if name_exists(db, payload.name):
+        print("[DEBUG] Liga con ese nombre ya existe")
         raise ValueError("A league with that name already exists.")
 
     # Temporada actual
     season = get_current_season(db)
+    print(f"[DEBUG] Temporada actual: {season}")
     if not season:
         raise RuntimeError("No current season is set. An administrator must mark one season as current.")
 
-    # Buscar equipo por nombre (único global)
-    team = get_team_by_name_case_insensitive(db, payload.team_name)
+    # Buscar equipo por id
+    team = db.execute(
+        select(team_models.Team).where(team_models.Team.id == payload.team_id)
+    ).scalar_one_or_none()
     if not team:
         # evitar filtrar info de existencia vs dueño → 404 genérico
         raise LookupError("Team not found.")
     if team.created_by != creator_user_id:
         # seguridad: no puedes usar equipo ajeno
         raise PermissionError("Solo puedes asignar un equipo propio.")
+    print(f"[DEBUG] team.league_id value: {team.league_id!r}, type: {type(team.league_id)}")
     if team.league_id is not None:
         raise ValueError("This team is already assigned to a league.")
 
@@ -99,6 +104,15 @@ def create_league_with_commissioner_team(
         # Asignar equipo existente a la liga
         team.league_id = lg.id
         db.add(team)
+        
+        # Crear el registro de miembro para el comisionado
+        member = models.LeagueMember(
+            league_id=lg.id,
+            user_id=creator_user_id,
+            team_id=team.id,
+            user_alias=team.name  # El alias inicial es el nombre del equipo
+        )
+        db.add(member)
 
         db.commit()
         db.refresh(lg)
@@ -106,3 +120,174 @@ def create_league_with_commissioner_team(
     except Exception:
         db.rollback()
         raise
+
+
+def search_leagues(db: Session, filters: schemas.LeagueSearchFilters):
+    """
+    Busca ligas aplicando filtros opcionales de nombre, temporada y estado.
+    Solo devuelve ligas activas (pre_draft, draft, in_season).
+    """
+    query = select(models.League).join(models.Season)
+    
+    # Filtrar solo ligas activas (no completadas por defecto)
+    if filters.status:
+        query = query.where(models.League.status == filters.status)
+    else:
+        # Por defecto, excluir ligas completadas
+        query = query.where(models.League.status.in_(["pre_draft", "draft", "in_season"]))
+    
+    # Filtro de nombre (búsqueda parcial, case-insensitive)
+    if filters.name:
+        query = query.where(
+            func.lower(models.League.name).contains(func.lower(filters.name.strip()))
+        )
+    
+    # Filtro de temporada
+    if filters.season_id:
+        query = query.where(models.League.season_id == filters.season_id)
+    
+    query = query.order_by(models.League.created_at.desc())
+    
+    leagues = db.execute(query).scalars().all()
+    
+    # Calcular slots disponibles para cada liga
+    results = []
+    for league in leagues:
+        # Contar cuántos miembros tiene la liga
+        member_count = db.execute(
+            select(func.count(models.LeagueMember.id))
+            .where(models.LeagueMember.league_id == league.id)
+        ).scalar()
+        
+        slots_available = league.max_teams - member_count
+        
+        results.append({
+            "id": league.id,
+            "uuid": str(league.uuid) if league.uuid else None,
+            "name": league.name,
+            "description": league.description,
+            "status": league.status,
+            "max_teams": league.max_teams,
+            "season_id": league.season_id,
+            "season_name": league.season.name,
+            "slots_available": slots_available,
+            "created_at": league.created_at,
+        })
+    
+    return results
+
+
+def join_league(
+    db: Session,
+    league_id: int,
+    user_id: int,
+    payload: schemas.JoinLeagueRequest,
+):
+    """
+    Une un usuario a una liga con las validaciones completas:
+    - Liga debe existir y estar activa
+    - Contraseña debe ser correcta
+    - Debe haber cupos disponibles
+    - El usuario no debe estar ya en la liga
+    - El equipo debe existir, pertenecer al usuario y no estar asignado
+    - El alias y nombre de equipo deben ser únicos en la liga
+    """
+    
+    # 1. Buscar la liga
+    league = db.execute(
+        select(models.League).where(models.League.id == league_id)
+    ).scalar_one_or_none()
+    
+    if not league:
+        raise LookupError("Liga no encontrada.")
+    
+    # 2. Validar que la liga esté activa (no completada)
+    if league.status == "completed":
+        raise ValueError("Esta liga ya ha finalizado y no acepta nuevos miembros.")
+    
+    # 3. Validar contraseña (error genérico por seguridad)
+    if not security.verify_password(payload.password, league.password_hash):
+        raise PermissionError("Credenciales inválidas.")
+    
+    # 4. Verificar si el usuario ya está en la liga
+    existing_member = db.execute(
+        select(models.LeagueMember)
+        .where(
+            models.LeagueMember.league_id == league_id,
+            models.LeagueMember.user_id == user_id
+        )
+    ).scalar_one_or_none()
+    
+    if existing_member:
+        raise ValueError("Ya eres miembro de esta liga.")
+    
+    # 5. Contar miembros actuales y validar cupos
+    member_count = db.execute(
+        select(func.count(models.LeagueMember.id))
+        .where(models.LeagueMember.league_id == league_id)
+    ).scalar()
+    
+    if member_count >= league.max_teams:
+        raise ValueError("Esta liga no tiene cupos disponibles.")
+    
+    # 6. Validar el equipo
+    team = db.execute(
+        select(team_models.Team).where(team_models.Team.id == payload.team_id)
+    ).scalar_one_or_none()
+    
+    if not team:
+        raise LookupError("Equipo no encontrado.")
+    
+    if team.created_by != user_id:
+        raise PermissionError("Solo puedes usar tus propios equipos.")
+    
+    if team.league_id is not None:
+        raise ValueError("Este equipo ya está asignado a otra liga.")
+    
+    # 7. Validar que el alias sea único en la liga
+    alias_exists = db.execute(
+        select(models.LeagueMember.id)
+        .where(
+            models.LeagueMember.league_id == league_id,
+            func.lower(models.LeagueMember.user_alias) == func.lower(payload.user_alias.strip())
+        )
+    ).scalar_one_or_none()
+    
+    if alias_exists:
+        raise ValueError(f"El alias '{payload.user_alias}' ya está en uso en esta liga. Por favor elige otro.")
+    
+    # 8. Validar que el nombre del equipo sea único en la liga
+    team_name_exists = db.execute(
+        select(team_models.Team.id)
+        .where(
+            team_models.Team.league_id == league_id,
+            func.lower(team_models.Team.name) == func.lower(team.name)
+        )
+    ).scalar_one_or_none()
+    
+    if team_name_exists:
+        raise ValueError(f"Ya existe un equipo con el nombre '{team.name}' en esta liga. Por favor usa otro equipo o renómbralo.")
+    
+    # 9. Todo validado, proceder a unirse
+    try:
+        # Asignar equipo a la liga
+        team.league_id = league_id
+        db.add(team)
+        
+        # Crear registro de membresía
+        member = models.LeagueMember(
+            league_id=league_id,
+            user_id=user_id,
+            team_id=team.id,
+            user_alias=payload.user_alias.strip()
+        )
+        db.add(member)
+        
+        db.commit()
+        db.refresh(member)
+        
+        return member
+    except Exception:
+        db.rollback()
+        raise
+

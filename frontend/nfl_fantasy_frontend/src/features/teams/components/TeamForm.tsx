@@ -1,22 +1,46 @@
 import { useState, useRef } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { createTeamJson, createTeamUpload } from "../../../services/teams";
+import { createTeamUpload } from "../../../services/teams";
 
-type Mode = "url" | "upload";
+const generateThumbnail = (file: File): Promise<string> => {
+  return new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        canvas.width = 100;
+        canvas.height = 100;
+        ctx?.drawImage(img, 0, 0, 100, 100);
+        resolve(canvas.toDataURL());
+      };
+      img.src = e.target?.result as string;
+    };
+    reader.readAsDataURL(file);
+  });
+};
 
 export default function CreateTeam() {
   const nav = useNavigate();
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [mode, setMode] = useState<Mode>("url");
   const [name, setName] = useState("");
   const [city, setCity] = useState("");
-  const [imageUrl, setImageUrl] = useState("");
   const [file, setFile] = useState<File | null>(null);
+  const [thumbnailPreview, setThumbnailPreview] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
-  const handleFileButtonClick = () => fileInputRef.current?.click();
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const selectedFile = e.target.files?.[0] || null;
+    setFile(selectedFile);
+    if (selectedFile) {
+      generateThumbnail(selectedFile).then(setThumbnailPreview);
+    } else {
+      setThumbnailPreview(null);
+    }
+  };
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -27,25 +51,18 @@ export default function CreateTeam() {
       setError("El nombre y la ciudad deben tener al menos 2 caracteres.");
       return;
     }
-    if (mode === "upload" && !file) {
+    if (!file) {
       setError("Selecciona un archivo de imagen.");
       return;
     }
 
     try {
       setSubmitting(true);
-      const team =
-        mode === "url"
-          ? await createTeamJson({
-              name: name.trim(),
-              city: city.trim(),
-              image_url: imageUrl.trim() || undefined,
-            })
-          : await createTeamUpload({
-              name: name.trim(),
-              city: city.trim(),
-              file: file as File,
-            });
+      const team = await createTeamUpload({
+        name: name.trim(),
+        city: city.trim(),
+        file: file as File,
+      });
 
       setSuccess("Equipo creado exitosamente. Redirigiendo al perfil…");
       setTimeout(() => nav("/profile"), 1300);
@@ -148,37 +165,6 @@ export default function CreateTeam() {
               fontWeight: 500,
               color: "#a0aec0"
             }}>
-              Modo:
-            </label>
-            <div style={{ display: "flex", gap: "20px", color: "#e2e8f0" }}>
-              <label style={{ display: "flex", alignItems: "center", gap: "8px", cursor: "pointer" }}>
-                <input
-                  type="radio"
-                  checked={mode === "url"}
-                  onChange={() => setMode("url")}
-                  style={{ accentColor: "#63b3ed" }}
-                />
-                URL
-              </label>
-              <label style={{ display: "flex", alignItems: "center", gap: "8px", cursor: "pointer" }}>
-                <input
-                  type="radio"
-                  checked={mode === "upload"}
-                  onChange={() => setMode("upload")}
-                  style={{ accentColor: "#63b3ed" }}
-                />
-                Subir archivo
-              </label>
-            </div>
-          </div>
-
-          <div style={{ marginBottom: "20px" }}>
-            <label style={{
-              display: "block",
-              marginBottom: "8px",
-              fontWeight: 500,
-              color: "#a0aec0"
-            }}>
               Nombre:
             </label>
             <input
@@ -232,111 +218,64 @@ export default function CreateTeam() {
             />
           </div>
 
-          {mode === "url" ? (
-            <div style={{ marginBottom: "20px" }}>
-              <label style={{
-                display: "block",
-                marginBottom: "8px",
-                fontWeight: 500,
-                color: "#a0aec0"
-              }}>
-                URL de imagen (opcional):
-              </label>
+          <div style={{ marginBottom: "20px" }}>
+            <label style={{
+              display: "block",
+              marginBottom: "8px",
+              fontWeight: 500,
+              color: "#a0aec0"
+            }}>
+              Archivo de imagen:
+            </label>
+            <div>
               <input
-                value={imageUrl}
-                onChange={(e) => setImageUrl(e.target.value)}
-                placeholder="https://..."
+                ref={fileInputRef}
+                type="file"
+                accept=".png,.jpg,.jpeg,.webp"
+                onChange={handleFileChange}
+                style={{ display: "none" }}
+              />
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
                 style={{
                   width: "100%",
                   padding: "12px",
+                  backgroundColor: "#2d3748",
+                  color: "#e2e8f0",
                   border: "2px solid #4a5568",
                   borderRadius: "6px",
                   fontSize: "16px",
-                  transition: "border-color 0.3s",
-                  outline: "none",
-                  backgroundColor: "#1a202c",
-                  color: "#e2e8f0"
+                  cursor: "pointer",
+                  transition: "all 0.3s",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: "8px"
                 }}
-                onFocus={(e) => (e.target.style.borderColor = "#63b3ed")}
-                onBlur={(e) => (e.target.style.borderColor = "#4a5568")}
-              />
-              <div style={{
-                marginTop: "12px",
-                height: "160px",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                border: "2px dashed #4a5568",
-                borderRadius: "6px",
-                backgroundColor: "#1a202c"
-              }}>
-                {imageUrl ? (
-                  <img src={imageUrl} style={{ maxHeight: "150px", borderRadius: "4px" }} alt="Preview" />
-                ) : (
-                  <span style={{ color: "#a0aec0" }}>Preview</span>
-                )}
-              </div>
+                onMouseOver={(e) => (e.currentTarget.style.borderColor = "#63b3ed")}
+                onMouseOut={(e) => (e.currentTarget.style.borderColor = "#4a5568")}
+              >
+                {file ? file.name : "Elegir archivo"}
+              </button>
             </div>
-          ) : (
-            <div style={{ marginBottom: "20px" }}>
-              <label style={{
-                display: "block",
-                marginBottom: "8px",
-                fontWeight: 500,
-                color: "#a0aec0"
-              }}>
-                Archivo de imagen:
-              </label>
-              <div>
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept=".png,.jpg,.jpeg,.webp"
-                  onChange={(e) => setFile(e.target.files?.[0] || null)}
-                  style={{ display: "none" }}
-                />
-                <button
-                  type="button"
-                  onClick={handleFileButtonClick}
-                  style={{
-                    width: "100%",
-                    padding: "12px",
-                    backgroundColor: "#2d3748",
-                    color: "#e2e8f0",
-                    border: "2px solid #4a5568",
-                    borderRadius: "6px",
-                    fontSize: "16px",
-                    cursor: "pointer",
-                    transition: "all 0.3s",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    gap: "8px"
-                  }}
-                  onMouseOver={(e) => (e.currentTarget.style.borderColor = "#63b3ed")}
-                  onMouseOut={(e) => (e.currentTarget.style.borderColor = "#4a5568")}
-                >
-                  {file ? file.name : "Elegir archivo"}
-                </button>
-              </div>
-              <div style={{
-                marginTop: "12px",
-                height: "160px",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                border: "2px dashed #4a5568",
-                borderRadius: "6px",
-                backgroundColor: "#1a202c"
-              }}>
-                {file ? (
-                  <img src={URL.createObjectURL(file)} style={{ maxHeight: "150px", borderRadius: "4px" }} alt="Preview" />
-                ) : (
-                  <span style={{ color: "#a0aec0" }}>Preview</span>
-                )}
-              </div>
+            <div style={{
+              marginTop: "12px",
+              height: "160px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              border: "2px dashed #4a5568",
+              borderRadius: "6px",
+              backgroundColor: "#1a202c"
+            }}>
+              {thumbnailPreview ? (
+                <img src={thumbnailPreview} style={{ maxWidth: "100px", maxHeight: "100px", borderRadius: "4px" }} alt="Thumbnail Preview" />
+              ) : (
+                <span style={{ color: "#a0aec0" }}>Preview del thumbnail</span>
+              )}
             </div>
-          )}
+          </div>
 
           <button
             type="submit"

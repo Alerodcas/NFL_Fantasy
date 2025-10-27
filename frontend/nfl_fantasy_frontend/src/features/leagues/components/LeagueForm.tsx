@@ -25,7 +25,7 @@ export default function LeagueForm() {
 
   // Teams (selector)
   const [teams, setTeams] = useState<Team[]>([]);
-  const [teamName, setTeamName] = useState<string>(""); // se envía como team_name
+  const [teamId, setTeamId] = useState<number | null>(null); // se envía como team_id
   const [teamsLoading, setTeamsLoading] = useState<boolean>(false);
 
   // UI state
@@ -47,7 +47,7 @@ export default function LeagueForm() {
         });
         setTeams(data);
         // If user has teams, select the first one
-        if (data.length > 0) setTeamName(data[0].name);
+  if (data.length > 0) setTeamId(data[0].id);
       } catch (e) {
         // si falla, deja teams vacío; el backend validará propiedad igualmente
         setTeams([]);
@@ -63,7 +63,7 @@ export default function LeagueForm() {
     if (!TEAM_SIZES.includes(maxTeams as any)) return "Cantidad de equipos no válida.";
     if (!PASSWORD_RE.test(password)) return "La contraseña debe tener 8–12 caracteres alfanuméricos e incluir al menos una minúscula y una mayúscula.";
     if (![4,6].includes(playoffFormat)) return "El formato de playoffs debe ser 4 o 6.";
-    if (!teamName) return "Debes seleccionar un equipo.";
+  if (!teamId) return "Debes seleccionar un equipo.";
     return null;
   };
 
@@ -83,8 +83,9 @@ export default function LeagueForm() {
       password,
       playoff_format: playoffFormat as any,
       allow_decimal_scoring: allowDecimal,
-      team_name: teamName, // 👈 enviamos el nombre del equipo seleccionado
+      team_id: teamId!, // 👈 enviamos el id del equipo seleccionado, nunca null
     };
+    console.log('[DEBUG] Payload enviado al backend:', payload);
 
     try {
       setSubmitting(true);
@@ -364,8 +365,11 @@ export default function LeagueForm() {
             </label>
 
             <select
-              value={teamName}
-              onChange={(e) => setTeamName(e.target.value)}
+              value={teamId ?? ""}
+              onChange={(e) => {
+                const val = e.target.value;
+                setTeamId(val ? Number(val) : null);
+              }}
               disabled={teamsLoading || teams.length === 0}
               style={{
                 width: "100%",
@@ -382,10 +386,10 @@ export default function LeagueForm() {
               onFocus={(e) => (e.target.style.borderColor = "#63b3ed")}
               onBlur={(e) => (e.target.style.borderColor = "#4a5568")}
             >
-              {teamsLoading && <option>Cargando equipos…</option>}
-              {!teamsLoading && teams.length === 0 && <option>No hay equipos disponibles</option>}
+              {teamsLoading && <option value="">Cargando equipos…</option>}
+              {!teamsLoading && teams.length === 0 && <option value="">No hay equipos disponibles</option>}
               {!teamsLoading && teams.length > 0 && teams.map((t) => (
-                <option key={t.id} value={t.name}>
+                <option key={t.id} value={t.id}>
                   {t.name} — {t.city}
                 </option>
               ))}
