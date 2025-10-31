@@ -15,6 +15,7 @@ class Season(Base):
     is_current = Column(Boolean, nullable=False, server_default=text("FALSE"))
     created_by = Column(Integer, ForeignKey("users.id", ondelete="RESTRICT"), nullable=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
+    cached_weeks = Column(JSONB, nullable=False, server_default=text("'[]'::jsonb"))
     
     weeks = relationship("Week", back_populates="season", cascade="all, delete-orphan")
     leagues = relationship("League", back_populates="season")

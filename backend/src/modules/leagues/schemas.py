@@ -117,6 +117,11 @@ class SeasonUpdate(BaseModel):
             return v.strip()
         return v
 
+class CachedWeek(BaseModel):
+    week_number: int
+    start_date: date
+    end_date: date
+
 class SeasonResponse(BaseModel):
     id: int
     name: str
@@ -126,6 +131,7 @@ class SeasonResponse(BaseModel):
     end_date: date
     is_current: bool
     created_by: int
+    cached_weeks: List[CachedWeek] = []
     weeks: List[WeekResponse] = []
     
     model_config = ConfigDict(from_attributes=True)
