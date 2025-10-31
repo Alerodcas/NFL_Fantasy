@@ -69,24 +69,40 @@ def create_league(
 
 @router.get("/search", response_model=list[schemas.LeagueSearchResult])
 def search_leagues(
-    name: str = None,
-    season_id: int = None,
-    status: str = None,
+    name: str | None = None,
+    season_id: int | None = None,
+    status: str | None = None,
     db: Session = Depends(get_db),
     current_user = Depends(get_current_user),
 ):
     """
-    Busca ligas por nombre, temporada y/o estado.
-    - name: búsqueda parcial por nombre (case-insensitive)
-    - season_id: filtrar por ID de temporada
-    - status: filtrar por estado (pre_draft, draft, in_season, completed)
+    Busca ligas solo cuando se proporciona un criterio concreto.
+    Reglas de seguridad para evitar listar ligas sin búsqueda:
+    - Se requiere al menos un criterio (name, season_id o status)
+    - Si se usa name, debe tener al menos 3 caracteres (case-insensitive)
     """
+    # Evitar la enumeración de ligas sin un término de búsqueda explícito
+    if not any([name, season_id, status]):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Debe proporcionar al menos un criterio de búsqueda (name, season_id o status)."
+        )
+
+    if name is not None:
+        cleaned = name.strip()
+        if len(cleaned) < 3:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="El parámetro 'name' debe tener al menos 3 caracteres."
+            )
+        name = cleaned
+
     filters = schemas.LeagueSearchFilters(
         name=name,
         season_id=season_id,
         status=status
     )
-    
+
     results = crud.search_leagues(db=db, filters=filters)
     return results
 

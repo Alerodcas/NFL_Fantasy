@@ -62,9 +62,31 @@ export type JoinLeagueResponse = {
   joined_at: string;
 };
 
+/**
+ * Search leagues by filters. To prevent accidental enumeration, this function
+ * requires at least one filter. If no filters are provided, it returns an empty array
+ * without calling the API.
+ */
 export async function searchLeagues(filters?: LeagueSearchFilters) {
+  // Frontend guard: don't call the API without a concrete filter
+  if (!filters || (!filters.name && !filters.season_id && !filters.status)) {
+    return [];
+  }
+
+  // If using name, enforce a minimal length to reduce broad scans
+  if (filters.name && filters.name.trim().length < 3) {
+    return [];
+  }
+
   const res = await api.get<LeagueSearchResult[]>("/leagues/search", { params: filters });
   return res.data;
+}
+
+/** Convenience helper when searching by name only. */
+export async function searchLeaguesByName(name: string) {
+  const trimmed = name.trim();
+  if (trimmed.length < 3) return [];
+  return searchLeagues({ name: trimmed });
 }
 
 export async function joinLeague(leagueId: number, payload: JoinLeagueRequest) {
