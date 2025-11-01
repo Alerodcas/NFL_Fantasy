@@ -1,10 +1,11 @@
-from fastapi import APIRouter, Depends, HTTPException, status, Request
+from fastapi import APIRouter, Depends, HTTPException, status, Request, UploadFile, File
 from sqlalchemy.orm import Session
 
 from ...config.database import get_db
 from ...core import audit
 from ..users.router import get_current_user
 from . import repository as crud, schemas
+from ...core.media import ensure_subdir, make_thumb_from_path, public_url
 
 router = APIRouter(prefix="/leagues", tags=["leagues"])
 
@@ -120,7 +121,7 @@ def join_league(
     Requiere:
     - password: contraseña de la liga
     - user_alias: alias único del usuario en esta liga
-    - team_id: ID del equipo a usar (debe ser del usuario y no estar en otra liga)
+    - fantasy_team: datos del equipo de fantasía (name, city, image_url opcional)
     
     Validaciones:
     - Liga existe y está activa
@@ -138,7 +139,7 @@ def join_league(
                 action="join_league_attempt",
                 user_id=str(current_user.id),
                 status="PENDING",
-                details=f"league_id={league_id}, team_id={payload.team_id}",
+                details=f"league_id={league_id}, fantasy_team={getattr(payload, 'fantasy_team', None)}",
                 source_ip=request.client.host if request.client else None,
                 user_agent=request.headers.get("user-agent"),
             )
@@ -160,7 +161,7 @@ def join_league(
                     action="join_league_success",
                     user_id=str(current_user.id),
                     status="SUCCESS",
-                    details=f"league_id={league_id}, team_id={payload.team_id}, alias={payload.user_alias}",
+                    details=f"league_id={league_id}, alias={payload.user_alias}",
                     source_ip=request.client.host if request.client else None,
                     user_agent=request.headers.get("user-agent"),
                 )
@@ -170,7 +171,7 @@ def join_league(
         return schemas.JoinLeagueResponse(
             message="Te has unido exitosamente a la liga",
             league_id=member.league_id,
-            team_id=member.team_id,
+            team_id=member.fantasy_team_id,
             user_alias=member.user_alias,
             joined_at=member.joined_at
         )
@@ -188,4 +189,40 @@ def join_league(
         import traceback
         traceback.print_exc()
         raise HTTPException(status_code=500, detail="No se pudo unir a la liga.")
+
+
+@router.post("/fantasy-team/upload", status_code=201)
+def upload_fantasy_team_image(
+    image: UploadFile = File(...),
+    db: Session = Depends(get_db),
+    current_user = Depends(get_current_user),
+):
+    """
+    Subida de imagen para equipos de fantasía. Devuelve URLs públicas de la imagen y su thumbnail.
+    Esto permite a los formularios enviar un archivo y luego usar la URL resultante en la creación/unión de liga.
+    """
+    # Guardar archivo bajo media/fantasy_teams y generar thumbnail
+    ft_dir = ensure_subdir("fantasy_teams")
+    filename = image.filename or "upload.png"
+    import os, uuid
+    ext = os.path.splitext(filename)[1].lower()
+    if ext not in [".png", ".jpg", ".jpeg", ".webp"]:
+        ext = ".png"
+    uid = uuid.uuid4().hex
+    img_path = ft_dir / f"{uid}{ext}"
+    try:
+        with open(img_path, "wb") as f:
+            f.write(image.file.read())
+        image.file.seek(0)
+        thumb_path = make_thumb_from_path(img_path)
+    finally:
+        try:
+            image.file.close()
+        except Exception:
+            pass
+
+    return {
+        "image_url": public_url(img_path),
+        "thumbnail_url": public_url(thumb_path),
+    }
 

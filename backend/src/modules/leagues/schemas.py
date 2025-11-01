@@ -4,6 +4,12 @@ from datetime import date, datetime
 
 _ALLOWED_TEAM_SIZES = {4, 6, 8, 10, 12, 14, 16, 18, 20}
 
+class FantasyTeamPayload(BaseModel):
+    name: str = Field(..., min_length=2, max_length=128)
+    city: str = Field(..., min_length=2, max_length=128)
+    image_url: Optional[str] = None
+
+
 class LeagueCreate(BaseModel):
     name: str = Field(..., min_length=1, max_length=100)
     description: Optional[str] = Field(None, max_length=1000)
@@ -12,7 +18,7 @@ class LeagueCreate(BaseModel):
     playoff_format: Literal[4, 6]
     allow_decimal_scoring: bool = True
 
-    team_id: int = Field(..., ge=1)
+    fantasy_team: FantasyTeamPayload
 
     @field_validator("max_teams")
     @classmethod
@@ -161,7 +167,7 @@ class LeagueSearchResult(BaseModel):
 class JoinLeagueRequest(BaseModel):
     password: str = Field(..., min_length=8, max_length=12)
     user_alias: str = Field(..., min_length=1, max_length=50, description="Alias del usuario en esta liga")
-    team_id: int = Field(..., ge=1, description="ID del equipo a usar en la liga")
+    fantasy_team: FantasyTeamPayload
     
     @field_validator("user_alias")
     @classmethod

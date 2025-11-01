@@ -8,7 +8,11 @@ export type LeagueCreatePayload = {
   password: string;          // 8–12 alphanumeric, at least one lower + one upper
   playoff_format: 4|6;
   allow_decimal_scoring: boolean;
-  team_id: number;
+  fantasy_team: {
+    name: string;
+    city: string;
+    image_url?: string;
+  };
 };
 
 export type LeagueCreatedResponse = {
@@ -51,7 +55,11 @@ export type LeagueSearchResult = {
 export type JoinLeagueRequest = {
   password: string;
   user_alias: string;
-  team_id: number;
+  fantasy_team: {
+    name: string;
+    city: string;
+    image_url?: string;
+  };
 };
 
 export type JoinLeagueResponse = {
@@ -91,5 +99,19 @@ export async function searchLeaguesByName(name: string) {
 
 export async function joinLeague(leagueId: number, payload: JoinLeagueRequest) {
   const res = await api.post<JoinLeagueResponse>(`/leagues/${leagueId}/join`, payload);
+  return res.data;
+}
+
+export type UploadFantasyTeamImageResponse = {
+  image_url: string;
+  thumbnail_url: string;
+};
+
+export async function uploadFantasyTeamImage(file: File) {
+  const form = new FormData();
+  form.append('image', file);
+  const res = await api.post<UploadFantasyTeamImageResponse>("/leagues/fantasy-team/upload", form, {
+    headers: { 'Content-Type': 'multipart/form-data' }
+  });
   return res.data;
 }

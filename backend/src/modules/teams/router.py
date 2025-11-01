@@ -2,14 +2,13 @@ import os
 from pathlib import Path
 import uuid
 from typing import Optional, List
-from PIL import Image
-import requests
 
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form
 from fastapi import status
 from sqlalchemy.orm import Session
 
 from ...config.database import get_db
+from ...core.media import ensure_subdir, public_url, make_thumb_from_path, try_download_and_thumb
 from ..users.router import get_current_user
 from .repository import (
     get_by_id, get_by_name_ci, create_team as repo_create, list_teams as repo_list, update_team as repo_update
@@ -18,34 +17,15 @@ from .schemas import Team as TeamOut, TeamCreate, TeamUpdate
 
 router = APIRouter()
 
-BASE_DIR = Path(__file__).resolve().parents[2]      # backend/src
-MEDIA_ROOT = BASE_DIR / "media"
-TEAM_DIR = MEDIA_ROOT / "teams"
-TEAM_DIR.mkdir(parents=True, exist_ok=True)
-THUMB_SIZE = (256, 256)
+# Ensure media directory for teams
+TEAM_DIR = ensure_subdir("teams")
 
 def _require_admin(user) -> None:
     if getattr(user, "role", None) not in ("admin", "manager", "owner"):
         # keep your permission model flexible; require at least "manager"
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Insufficient role")
 
-def _public_url(fs_path: Path) -> str:
-    rel = fs_path.relative_to(MEDIA_ROOT).as_posix()
-    return f"/media/{rel}"
-
-def _make_thumb_from_path(image_path: str) -> str:
-    thumb_path = os.path.splitext(image_path)[0] + "_thumb.png"
-    with Image.open(image_path) as im:
-        im = im.convert("RGB")
-        im.thumbnail(THUMB_SIZE, Image.LANCZOS)
-        canvas = Image.new("RGB", THUMB_SIZE, (255, 255, 255))
-        x = (THUMB_SIZE[0] - im.width) // 2
-        y = (THUMB_SIZE[1] - im.height) // 2
-        canvas.paste(im, (x, y))
-        canvas.save(thumb_path, format="PNG")
-    return thumb_path
-
-def _save_upload(upload: UploadFile) -> (str, str):
+def _save_upload(upload: UploadFile) -> tuple[str, str]:
     ext = os.path.splitext(upload.filename or "")[1].lower()
     if ext not in [".png", ".jpg", ".jpeg", ".webp"]:
         ext = ".png"
@@ -55,30 +35,9 @@ def _save_upload(upload: UploadFile) -> (str, str):
     with open(image_path, "wb") as f:
         f.write(upload.file.read())
     upload.file.seek(0)
-    thumb_path = TEAM_DIR / f"{uid}_thumb.png"
-    return _public_url(image_path), _public_url(thumb_path)
-
-def _try_download_and_thumb(image_url: str) -> Optional[str]:
-    """
-    Try to download 'image_url' to local media to generate a thumbnail.
-    If download fails, return None (we'll still store the URL provided).
-    """
-    try:
-        uid = uuid.uuid4().hex
-        ext = os.path.splitext(image_url)[1].lower()
-        if ext not in [".png", ".jpg", ".jpeg", ".webp"]:
-            ext = ".png"
-        image_path = TEAM_DIR / f"{uid}{ext}"
-
-        r = requests.get(image_url, timeout=10)
-        r.raise_for_status()
-        with open(image_path, "wb") as f:
-            f.write(r.content)
-
-        thumb_path = TEAM_DIR / f"{uid}_thumb.png"
-        return _public_url(thumb_path)
-    except Exception:
-        return None
+    # Create an actual thumbnail image next to the uploaded image
+    thumb_path = make_thumb_from_path(image_path)
+    return public_url(image_path), public_url(thumb_path)
 
 # ---------- Endpoints ----------
 
@@ -103,7 +62,7 @@ def create_team_json(
     img_url = payload.image_url if payload.image_url else None
     # Try to generate a local thumbnail when a URL is provided
     if img_url:
-        thumb_url = _try_download_and_thumb(str(img_url))
+        thumb_url = try_download_and_thumb(str(img_url), subdir="teams")
 
     team = repo_create(db, name=name, city=city, image_url=str(img_url) if img_url else None, thumbnail_url=thumb_url, created_by=current_user.id,
 )

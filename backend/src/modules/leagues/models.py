@@ -60,7 +60,8 @@ class LeagueMember(Base):
     id = Column(Integer, primary_key=True)
     league_id = Column(Integer, ForeignKey("leagues.id", ondelete="CASCADE"), nullable=False)
     user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
-    team_id = Column(Integer, ForeignKey("teams.id", ondelete="CASCADE"), nullable=False)
+    team_id = Column(Integer, ForeignKey("teams.id", ondelete="CASCADE"), nullable=True)
+    fantasy_team_id = Column(Integer, ForeignKey("fantasy_teams.id", ondelete="CASCADE"), nullable=True)
     user_alias = Column(String(50), nullable=False)
     joined_at = Column(DateTime(timezone=True), server_default=func.now())
     
@@ -68,6 +69,7 @@ class LeagueMember(Base):
     
     __table_args__ = (
         # Un usuario solo puede estar una vez en una liga
-        # Un equipo solo puede estar en una liga
+        # Un equipo solo puede estar en una liga (para compatibilidad)
+        # Un fantasy_team solo puede estar una vez en una liga
         # El alias debe ser único dentro de la liga
     )

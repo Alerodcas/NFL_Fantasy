@@ -1,7 +1,8 @@
 from sqlalchemy.orm import Session
 from sqlalchemy import select, func
 from ...config import auth as security
-from ..teams import models as team_models
+from ...core.media import try_download_and_thumb
+from ..fantasy_teams import repository as ftrepo
 from . import models, schemas
 
 # Default roster & scoring pulled from the user story
@@ -41,10 +42,7 @@ def name_exists(db: Session, league_name: str) -> bool:
         select(models.League.id).where(models.League.name == league_name)
     ).scalar_one_or_none() is not None
 
-def get_team_by_name_case_insensitive(db: Session, team_name: str) -> team_models.Team | None:
-    return db.execute(
-        select(team_models.Team).where(func.lower(team_models.Team.name) == func.lower(team_name))
-    ).scalar_one_or_none()
+# Note: real team lookups are no longer used in league flows (fantasy teams are separate)
 
 def create_league_with_commissioner_team(
     db: Session,
@@ -62,19 +60,8 @@ def create_league_with_commissioner_team(
     if not season:
         raise RuntimeError("No current season is set. An administrator must mark one season as current.")
 
-    # Buscar equipo por id
-    team = db.execute(
-        select(team_models.Team).where(team_models.Team.id == payload.team_id)
-    ).scalar_one_or_none()
-    if not team:
-        # evitar filtrar info de existencia vs dueño → 404 genérico
-        raise LookupError("Team not found.")
-    if team.created_by != creator_user_id:
-        # seguridad: no puedes usar equipo ajeno
-        raise PermissionError("Solo puedes asignar un equipo propio.")
-    print(f"[DEBUG] team.league_id value: {team.league_id!r}, type: {type(team.league_id)}")
-    if team.league_id is not None:
-        raise ValueError("This team is already assigned to a league.")
+    # Crear fantasy team para el comisionado dentro de esta liga
+    ft_payload = payload.fantasy_team
 
     # Hash contraseña de liga
     pwd_hash = security.get_password_hash(payload.password)
@@ -99,24 +86,46 @@ def create_league_with_commissioner_team(
     # Transactional create
     try:
         db.add(lg)
-        db.flush()  
+        db.flush()
 
-        # Asignar equipo existente a la liga
-        team.league_id = lg.id
-        db.add(team)
-        
+        # Crear fantasy team (nombre único dentro de la liga)
+        existing_ft = ftrepo.get_by_name_in_league_ci(db, league_id=lg.id, name=ft_payload.name)
+        if existing_ft:
+            raise ValueError("Ya existe un equipo con ese nombre en esta liga.")
+
+        # Intentar generar thumbnail si se proporcionó imagen
+        thumb_url = None
+        if getattr(ft_payload, 'image_url', None):
+            img = str(ft_payload.image_url)
+            # Si ya es un recurso local en /media/, derivar el _thumb por convención
+            if img.startswith("/media/"):
+                base, _dot, _ext = img.rpartition('.')
+                thumb_url = f"{base}_thumb.png"
+            else:
+                thumb_url = try_download_and_thumb(img, subdir="fantasy_teams")
+
+        fantasy_team = ftrepo.create_fantasy_team(
+            db,
+            name=ft_payload.name,
+            city=ft_payload.city,
+            image_url=str(ft_payload.image_url) if getattr(ft_payload, 'image_url', None) else None,
+            thumbnail_url=thumb_url,
+            user_id=creator_user_id,
+            league_id=lg.id,
+        )
+
         # Crear el registro de miembro para el comisionado
         member = models.LeagueMember(
             league_id=lg.id,
             user_id=creator_user_id,
-            team_id=team.id,
-            user_alias=team.name  # El alias inicial es el nombre del equipo
+            fantasy_team_id=fantasy_team.id,
+            user_alias=ft_payload.name.strip(),
         )
         db.add(member)
 
         db.commit()
         db.refresh(lg)
-        return lg, team
+        return lg, fantasy_team
     except Exception:
         db.rollback()
         raise
@@ -230,19 +239,10 @@ def join_league(
     if member_count >= league.max_teams:
         raise ValueError("Esta liga no tiene cupos disponibles.")
     
-    # 6. Validar el equipo
-    team = db.execute(
-        select(team_models.Team).where(team_models.Team.id == payload.team_id)
-    ).scalar_one_or_none()
-    
-    if not team:
-        raise LookupError("Equipo no encontrado.")
-    
-    if team.created_by != user_id:
-        raise PermissionError("Solo puedes usar tus propios equipos.")
-    
-    if team.league_id is not None:
-        raise ValueError("Este equipo ya está asignado a otra liga.")
+    # 6. Crear fantasy team del usuario para esta liga
+    ft = payload.fantasy_team
+    if not ft or not ft.name or not ft.city:
+        raise ValueError("Debe proporcionar los datos del equipo de fantasía (nombre y ciudad).")
     
     # 7. Validar que el alias sea único en la liga
     alias_exists = db.execute(
@@ -256,36 +256,43 @@ def join_league(
     if alias_exists:
         raise ValueError(f"El alias '{payload.user_alias}' ya está en uso en esta liga. Por favor elige otro.")
     
-    # 8. Validar que el nombre del equipo sea único en la liga
-    team_name_exists = db.execute(
-        select(team_models.Team.id)
-        .where(
-            team_models.Team.league_id == league_id,
-            func.lower(team_models.Team.name) == func.lower(team.name)
-        )
-    ).scalar_one_or_none()
-    
-    if team_name_exists:
-        raise ValueError(f"Ya existe un equipo con el nombre '{team.name}' en esta liga. Por favor usa otro equipo o renómbralo.")
+    # 8. Validar que el nombre del equipo sea único en la liga (fantasy_teams)
+    if ftrepo.get_by_name_in_league_ci(db, league_id=league_id, name=ft.name):
+        raise ValueError(f"Ya existe un equipo con el nombre '{ft.name}' en esta liga. Por favor elige otro.")
     
     # 9. Todo validado, proceder a unirse
     try:
-        # Asignar equipo a la liga
-        team.league_id = league_id
-        db.add(team)
-        
-        # Crear registro de membresía
+        # Crear fantasy team y registro de membresía
+        # Intentar generar thumbnail si se proporcionó imagen
+        thumb_url = None
+        if getattr(ft, 'image_url', None):
+            img = str(ft.image_url)
+            if img.startswith("/media/"):
+                base, _dot, _ext = img.rpartition('.')
+                thumb_url = f"{base}_thumb.png"
+            else:
+                thumb_url = try_download_and_thumb(img, subdir="fantasy_teams")
+
+        fantasy_team = ftrepo.create_fantasy_team(
+            db,
+            name=ft.name,
+            city=ft.city,
+            image_url=str(ft.image_url) if getattr(ft, 'image_url', None) else None,
+            thumbnail_url=thumb_url,
+            user_id=user_id,
+            league_id=league_id,
+        )
+
         member = models.LeagueMember(
             league_id=league_id,
             user_id=user_id,
-            team_id=team.id,
-            user_alias=payload.user_alias.strip()
+            fantasy_team_id=fantasy_team.id,
+            user_alias=payload.user_alias.strip(),
         )
         db.add(member)
         
         db.commit()
         db.refresh(member)
-        
         return member
     except Exception:
         db.rollback()

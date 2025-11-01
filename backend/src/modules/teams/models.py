@@ -34,3 +34,6 @@ Index(
 
 # Helper
 Index("ix_teams_league_id", "league_id")
+
+
+    # Note: Fantasy team moved into its own module 'fantasy_teams'
