@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { createLeague, LeagueCreatePayload, LeagueCreatedResponse, uploadFantasyTeamImage } from "../../../services/leagues";
+import { isValidPassword, passwordErrorMessage } from "../../../utils/password";
 
 const TEAM_SIZES = [4,6,8,10,12,14,16,18,20] as const;
-const PASSWORD_RE = /^(?=.*[a-z])(?=.*[A-Z])[A-Za-z0-9]{8,12}$/;
 
 import { useAuth } from "../../../shared/hooks/useAuth";
 
@@ -48,7 +48,8 @@ export default function LeagueForm() {
     const nm = name.trim();
     if (nm.length < 1 || nm.length > 100) return "El nombre de la liga debe tener entre 1 y 100 caracteres.";
     if (!TEAM_SIZES.includes(maxTeams as any)) return "Cantidad de equipos no válida.";
-    if (!PASSWORD_RE.test(password)) return "La contraseña debe tener 8–12 caracteres alfanuméricos e incluir al menos una minúscula y una mayúscula.";
+  const pwdErr = passwordErrorMessage(password);
+  if (pwdErr) return pwdErr;
     if (![4,6].includes(playoffFormat)) return "El formato de playoffs debe ser 4 o 6.";
   if (fantasyTeamName.trim().length < 2) return "El nombre del equipo de fantasía debe tener al menos 2 caracteres.";
   if (fantasyTeamCity.trim().length < 2) return "La ciudad del equipo de fantasía debe tener al menos 2 caracteres.";

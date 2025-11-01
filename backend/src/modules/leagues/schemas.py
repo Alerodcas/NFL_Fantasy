@@ -1,5 +1,6 @@
 from pydantic import BaseModel, Field, field_validator, validator, model_validator, ConfigDict
 from typing import Optional, Literal, List
+from ...core.validators import validate_password
 from datetime import date, datetime
 
 _ALLOWED_TEAM_SIZES = {4, 6, 8, 10, 12, 14, 16, 18, 20}
@@ -30,12 +31,7 @@ class LeagueCreate(BaseModel):
     @field_validator("password")
     @classmethod
     def validate_password(cls, v: str):
-        import re
-        if not re.fullmatch(r"(?=.*[a-z])(?=.*[A-Z])[A-Za-z0-9]{8,12}", v):
-            raise ValueError(
-                "Password must be 8–12 chars, alphanumeric, include at least one lowercase and one uppercase."
-            )
-        return v
+        return validate_password(v)
 
 
 class LeagueCreated(BaseModel):
