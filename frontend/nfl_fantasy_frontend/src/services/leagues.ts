@@ -10,7 +10,6 @@ export type LeagueCreatePayload = {
   allow_decimal_scoring: boolean;
   fantasy_team: {
     name: string;
-    city: string;
     image_url?: string;
   };
 };
@@ -57,7 +56,6 @@ export type JoinLeagueRequest = {
   user_alias: string;
   fantasy_team: {
     name: string;
-    city: string;
     image_url?: string;
   };
 };

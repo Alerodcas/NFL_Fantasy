@@ -121,7 +121,7 @@ def join_league(
     Requiere:
     - password: contraseña de la liga
     - user_alias: alias único del usuario en esta liga
-    - fantasy_team: datos del equipo de fantasía (name, city, image_url opcional)
+    - fantasy_team: datos del equipo de fantasía (name, image_url opcional)
     
     Validaciones:
     - Liga existe y está activa

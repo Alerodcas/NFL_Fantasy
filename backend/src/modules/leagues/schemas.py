@@ -7,7 +7,6 @@ _ALLOWED_TEAM_SIZES = {4, 6, 8, 10, 12, 14, 16, 18, 20}
 
 class FantasyTeamPayload(BaseModel):
     name: str = Field(..., min_length=2, max_length=128)
-    city: str = Field(..., min_length=2, max_length=128)
     image_url: Optional[str] = None
 
 

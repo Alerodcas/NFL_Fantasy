@@ -23,7 +23,7 @@ const JoinLeague = () => {
   const [userAlias, setUserAlias] = useState('');
   // Fantasy team fields
   const [fantasyName, setFantasyName] = useState('');
-  const [fantasyCity, setFantasyCity] = useState('');
+  // City removed for fantasy teams
   const [fantasyImageUrl, setFantasyImageUrl] = useState('');
   const [fantasyThumbUrl, setFantasyThumbUrl] = useState('');
   const [uploadingImage, setUploadingImage] = useState(false);
@@ -68,7 +68,6 @@ const JoinLeague = () => {
     setPassword('');
     setUserAlias('');
   setFantasyName('');
-  setFantasyCity('');
   setFantasyImageUrl('');
   setFantasyThumbUrl('');
     setError('');
@@ -81,7 +80,6 @@ const JoinLeague = () => {
     setPassword('');
     setUserAlias('');
   setFantasyName('');
-  setFantasyCity('');
   setFantasyImageUrl('');
   setFantasyThumbUrl('');
     setError('');
@@ -91,8 +89,8 @@ const JoinLeague = () => {
     e.preventDefault();
     
     if (!selectedLeague) return;
-    if (fantasyName.trim().length < 2 || fantasyCity.trim().length < 2) {
-      setError('Ingresa un nombre y ciudad válidos para tu equipo de fantasía');
+    if (fantasyName.trim().length < 2) {
+      setError('Ingresa un nombre válido para tu equipo de fantasía');
       return;
     }
     
@@ -106,7 +104,6 @@ const JoinLeague = () => {
         user_alias: userAlias,
         fantasy_team: {
           name: fantasyName.trim(),
-          city: fantasyCity.trim(),
           image_url: fantasyImageUrl.trim() || undefined,
         },
       };
@@ -575,19 +572,7 @@ const JoinLeague = () => {
                   }}
                   disabled={loading}
                 />
-                <div style={{ height: 10 }} />
-                <input
-                  type="text"
-                  placeholder="Ciudad"
-                  value={fantasyCity}
-                  onChange={(e) => setFantasyCity(e.target.value)}
-                  required
-                  style={{
-                    width: '100%', padding: '12px', backgroundColor: '#1a202c',
-                    border: '1px solid #4a5568', borderRadius: '6px', color: '#e2e8f0', fontSize: '14px'
-                  }}
-                  disabled={loading}
-                />
+                {/* City removed for fantasy teams */}
                 <div style={{ height: 10 }} />
                 <input
                   type="text"
@@ -694,7 +679,7 @@ const JoinLeague = () => {
                 </button>
                 <button
                   type="submit"
-                  disabled={loading || !password || !userAlias || fantasyName.trim().length < 2 || fantasyCity.trim().length < 2}
+                  disabled={loading || !password || !userAlias || fantasyName.trim().length < 2}
                   style={{
                     flex: 1,
                     padding: '12px',
@@ -702,9 +687,9 @@ const JoinLeague = () => {
                     color: 'white',
                     border: 'none',
                     borderRadius: '6px',
-                    cursor: (loading || !password || !userAlias || fantasyName.trim().length < 2 || fantasyCity.trim().length < 2) ? 'not-allowed' : 'pointer',
+                    cursor: (loading || !password || !userAlias || fantasyName.trim().length < 2) ? 'not-allowed' : 'pointer',
                     fontWeight: '600',
-                    opacity: (loading || !password || !userAlias || fantasyName.trim().length < 2 || fantasyCity.trim().length < 2) ? 0.6 : 1,
+                    opacity: (loading || !password || !userAlias || fantasyName.trim().length < 2) ? 0.6 : 1,
                   }}
                 >
                   {loading ? 'Uniéndose...' : 'Unirse a la Liga'}

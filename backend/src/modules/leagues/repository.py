@@ -107,7 +107,6 @@ def create_league_with_commissioner_team(
         fantasy_team = ftrepo.create_fantasy_team(
             db,
             name=ft_payload.name,
-            city=ft_payload.city,
             image_url=str(ft_payload.image_url) if getattr(ft_payload, 'image_url', None) else None,
             thumbnail_url=thumb_url,
             user_id=creator_user_id,
@@ -241,8 +240,8 @@ def join_league(
     
     # 6. Crear fantasy team del usuario para esta liga
     ft = payload.fantasy_team
-    if not ft or not ft.name or not ft.city:
-        raise ValueError("Debe proporcionar los datos del equipo de fantasía (nombre y ciudad).")
+    if not ft or not ft.name:
+        raise ValueError("Debe proporcionar los datos del equipo de fantasía (nombre).")
     
     # 7. Validar que el alias sea único en la liga
     alias_exists = db.execute(
@@ -276,7 +275,6 @@ def join_league(
         fantasy_team = ftrepo.create_fantasy_team(
             db,
             name=ft.name,
-            city=ft.city,
             image_url=str(ft.image_url) if getattr(ft, 'image_url', None) else None,
             thumbnail_url=thumb_url,
             user_id=user_id,

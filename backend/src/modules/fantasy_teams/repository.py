@@ -30,7 +30,6 @@ def create_fantasy_team(
     db: Session,
     *,
     name: str,
-    city: str,
     image_url: Optional[str],
     thumbnail_url: Optional[str],
     user_id: int,
@@ -38,7 +37,6 @@ def create_fantasy_team(
 ) -> models.FantasyTeam:
     team = models.FantasyTeam(
         name=name.strip(),
-        city=city.strip(),
         image_url=image_url,
         thumbnail_url=thumbnail_url,
         is_active=True,

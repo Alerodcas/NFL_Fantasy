@@ -6,7 +6,6 @@ class FantasyTeam(Base):
 
     id = Column(BigInteger, primary_key=True, index=True)
     name = Column(String(128), nullable=False)
-    city = Column(String(128), nullable=False)
     image_url = Column(String(512), nullable=True)
     thumbnail_url = Column(String(512), nullable=True)
     is_active = Column(Boolean, nullable=False, default=True)

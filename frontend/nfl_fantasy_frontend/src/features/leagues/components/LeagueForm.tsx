@@ -24,7 +24,6 @@ export default function LeagueForm() {
 
   // Fantasy team (commissioner) fields
   const [fantasyTeamName, setFantasyTeamName] = useState("");
-  const [fantasyTeamCity, setFantasyTeamCity] = useState("");
   const [fantasyTeamImageUrl, setFantasyTeamImageUrl] = useState("");
   const [fantasyTeamThumbUrl, setFantasyTeamThumbUrl] = useState("");
   const [uploadingImage, setUploadingImage] = useState(false);
@@ -52,7 +51,6 @@ export default function LeagueForm() {
   if (pwdErr) return pwdErr;
     if (![4,6].includes(playoffFormat)) return "El formato de playoffs debe ser 4 o 6.";
   if (fantasyTeamName.trim().length < 2) return "El nombre del equipo de fantasía debe tener al menos 2 caracteres.";
-  if (fantasyTeamCity.trim().length < 2) return "La ciudad del equipo de fantasía debe tener al menos 2 caracteres.";
     return null;
   };
 
@@ -91,7 +89,6 @@ export default function LeagueForm() {
       allow_decimal_scoring: allowDecimal,
       fantasy_team: {
         name: fantasyTeamName.trim(),
-        city: fantasyTeamCity.trim(),
         image_url: fantasyTeamImageUrl.trim() || undefined,
       },
     };
@@ -389,29 +386,7 @@ export default function LeagueForm() {
             />
           </div>
 
-          <div style={{ marginBottom: "16px" }}>
-            <label style={{ display: "block", marginBottom: "8px", fontWeight: 500, color: "#a0aec0" }}>
-              Ciudad:
-            </label>
-            <input
-              value={fantasyTeamCity}
-              onChange={(e) => setFantasyTeamCity(e.target.value)}
-              required
-              style={{
-                width: "100%",
-                padding: "12px",
-                border: "2px solid #4a5568",
-                borderRadius: "6px",
-                fontSize: "16px",
-                outline: "none",
-                backgroundColor: "#1a202c",
-                color: "#e2e8f0",
-                transition: "border-color 0.3s"
-              }}
-              onFocus={(e) => (e.target.style.borderColor = "#63b3ed")}
-              onBlur={(e) => (e.target.style.borderColor = "#4a5568")}
-            />
-          </div>
+          {/* Campo de ciudad eliminado para equipos de fantasía */}
 
           <div style={{ marginBottom: "22px" }}>
             <label style={{ display: "block", marginBottom: "8px", fontWeight: 500, color: "#a0aec0" }}>
