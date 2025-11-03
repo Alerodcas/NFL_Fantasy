@@ -4,7 +4,8 @@ from sqlalchemy.orm import Session
 from ...config.database import get_db
 from ...core import audit
 from ..users.router import get_current_user
-from . import repository as crud, schemas
+from . import schemas
+from .services.league_service import create_league_with_commissioner_team, search_leagues as svc_search_leagues, join_league as svc_join_league
 from ...core.media import ensure_subdir, make_thumb_from_path, public_url
 
 router = APIRouter(prefix="/leagues", tags=["leagues"])
@@ -32,7 +33,7 @@ def create_league(
 
     try:
         print("[DEBUG] Llamando a create_league_with_commissioner_team")
-        league, team = crud.create_league_with_commissioner_team(
+        league, team = create_league_with_commissioner_team(
             db=db, creator_user_id=current_user.id, payload=payload
         )
         print("[DEBUG] create_league_with_commissioner_team completado exitosamente")
@@ -104,7 +105,7 @@ def search_leagues(
         status=status
     )
 
-    results = crud.search_leagues(db=db, filters=filters)
+    results = svc_search_leagues(db=db, filters=filters)
     return results
 
 
@@ -147,7 +148,7 @@ def join_league(
         pass
     
     try:
-        member = crud.join_league(
+        member = svc_join_league(
             db=db,
             league_id=league_id,
             user_id=current_user.id,

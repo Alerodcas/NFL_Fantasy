@@ -36,7 +36,7 @@ def create_fantasy_team(
     league_id: int,
 ) -> models.FantasyTeam:
     team = models.FantasyTeam(
-        name=name.strip(),
+        name=name,
         image_url=image_url,
         thumbnail_url=thumbnail_url,
         is_active=True,

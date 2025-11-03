@@ -8,7 +8,7 @@ def get_by_id(db: Session, team_id: int) -> Optional[models.Team]:
 
 def get_by_name_ci(db: Session, name: str) -> Optional[models.Team]:
     return db.execute(
-        select(models.Team).where(func.lower(models.Team.name) == func.lower(name.strip()))
+        select(models.Team).where(func.lower(models.Team.name) == func.lower(name))
     ).scalar_one_or_none()
 
 def create_team(
@@ -21,8 +21,8 @@ def create_team(
     created_by: int,                 
 ) -> models.Team:
     team = models.Team(
-        name=name.strip(),
-        city=city.strip(),
+        name=name,
+        city=city,
         image_url=image_url,
         thumbnail_url=thumbnail_url,
         is_active=True,
@@ -43,9 +43,9 @@ def update_team(
     is_active: Optional[bool] = None,
 ) -> models.Team:
     if name is not None:
-        team.name = name.strip()
+        team.name = name
     if city is not None:
-        team.city = city.strip()
+        team.city = city
     if image_url is not None:
         team.image_url = image_url
     if is_active is not None:
