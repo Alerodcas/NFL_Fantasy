@@ -75,15 +75,15 @@ const ProfilePage = () => {
 		logout();
 		navigate('/login');
 	};
-
-	const handleCreateTeam = () => {
-		navigate('/teams/new');
-	};
 	const handleCreateLeague = () => {
 		navigate('/create-league');
 	};
 	const handleJoinLeague = () => {
 		navigate('/join-league');
+	};
+
+	const handleBackToAdmin = () => {
+		navigate('/admin');
 	};
 
 	return (
@@ -264,24 +264,26 @@ const ProfilePage = () => {
 						</div>
 					</div>
 
+					{user.role && user.role.toLowerCase() === 'admin' && (
 						<button
-						onClick={handleCreateTeam}
-						style={{
-							width: '100%',
-							padding: '14px',
-							backgroundColor: '#63b3ed',
-							color: 'white',
-							border: 'none',
-							borderRadius: '6px',
-							fontSize: '16px',
-							fontWeight: '600',
-							cursor: 'pointer',
-							transition: 'background-color 0.3s',
-							marginBottom: '10px'
-						}}
-					>
-						Crear Equipo
-					</button>
+							onClick={handleBackToAdmin}
+							style={{
+								width: '100%',
+								padding: '14px',
+								backgroundColor: '#805ad5',
+								color: 'white',
+								border: 'none',
+								borderRadius: '6px',
+								fontSize: '16px',
+								fontWeight: '600',
+								cursor: 'pointer',
+								transition: 'background-color 0.3s',
+								marginBottom: '10px'
+							}}
+						>
+							Volver a Administracion
+						</button>
+					)}
 
 					<button
 						onClick={handleCreateLeague}

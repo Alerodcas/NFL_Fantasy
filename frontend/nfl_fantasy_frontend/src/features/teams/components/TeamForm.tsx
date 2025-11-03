@@ -111,7 +111,7 @@ export default function CreateTeam() {
             marginBottom: "20px"
           }}>
             <Link
-              to="/profile"
+              to="/admin"
               style={{
                 padding: "8px 16px",
                 backgroundColor: "#2d3748",
@@ -128,7 +128,7 @@ export default function CreateTeam() {
               onMouseOver={(e) => (e.currentTarget.style.borderColor = "#63b3ed")}
               onMouseOut={(e) => (e.currentTarget.style.borderColor = "#4a5568")}
             >
-              ← Volver al Perfil
+              ← Volver al Panel de Administración
             </Link>
           </div>
 
