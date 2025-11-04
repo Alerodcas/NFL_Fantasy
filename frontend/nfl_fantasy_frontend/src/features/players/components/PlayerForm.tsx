@@ -1,6 +1,17 @@
-import { useState, useRef } from "react";
-import { useNavigate, Link } from "react-router-dom";
-import { createTeamUpload } from "../../../services/teams";
+import { useEffect, useRef, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { createPlayerUpload } from "../../../services/players";
+import { listTeams, Team } from "../../../services/teams";
+
+const POSITIONS = [
+  { value: "QB", label: "QuarterBack (QB)" },
+  { value: "RB", label: "RunningBack (RB)" },
+  { value: "WR", label: "Wide Receiver (WR)" },
+  { value: "TE", label: "Tight End (TE)" },
+  { value: "K", label: "Kicker (K)" },
+  { value: "DST", label: "Defense/Special Teams (DST)" },
+  { value: "FLEX", label: "Flexible (FLEX)" },
+];
 
 const generateThumbnail = (file: File): Promise<string> => {
   return new Promise((resolve) => {
@@ -8,8 +19,8 @@ const generateThumbnail = (file: File): Promise<string> => {
     reader.onload = (e) => {
       const img = new Image();
       img.onload = () => {
-        const canvas = document.createElement('canvas');
-        const ctx = canvas.getContext('2d');
+        const canvas = document.createElement("canvas");
+        const ctx = canvas.getContext("2d");
         canvas.width = 100;
         canvas.height = 100;
         ctx?.drawImage(img, 0, 0, 100, 100);
@@ -21,16 +32,39 @@ const generateThumbnail = (file: File): Promise<string> => {
   });
 };
 
-export default function CreateTeam() {
+export default function PlayerForm() {
   const nav = useNavigate();
   const fileInputRef = useRef<HTMLInputElement>(null);
+
   const [name, setName] = useState("");
-  const [city, setCity] = useState("");
+  const [position, setPosition] = useState("");
+  const [teamId, setTeamId] = useState<number | "">("");
   const [file, setFile] = useState<File | null>(null);
   const [thumbnailPreview, setThumbnailPreview] = useState<string | null>(null);
+  const [teams, setTeams] = useState<Team[]>([]);
+
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [loadingTeams, setLoadingTeams] = useState(true);
+
+  useEffect(() => {
+    // Load teams to choose from
+    setLoadingTeams(true);
+    listTeams()
+      .then((data) => {
+        console.log("Teams loaded:", data);
+        setTeams(data);
+      })
+      .catch((err) => {
+        console.error("Failed to load teams:", err);
+        setError("No se pudieron cargar los equipos. Verifica tu conexión.");
+        setTeams([]);
+      })
+      .finally(() => {
+        setLoadingTeams(false);
+      });
+  }, []);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0] || null;
@@ -47,8 +81,16 @@ export default function CreateTeam() {
     setError(null);
     setSuccess(null);
 
-    if (name.trim().length < 2 || city.trim().length < 2) {
-      setError("El nombre y la ciudad deben tener al menos 2 caracteres.");
+    if (name.trim().length < 2) {
+      setError("El nombre debe tener al menos 2 caracteres.");
+      return;
+    }
+    if (!position.trim()) {
+      setError("La posición es obligatoria.");
+      return;
+    }
+    if (!teamId || Number(teamId) <= 0) {
+      setError("Debes seleccionar un equipo.");
       return;
     }
     if (!file) {
@@ -58,19 +100,20 @@ export default function CreateTeam() {
 
     try {
       setSubmitting(true);
-      const team = await createTeamUpload({
+      await createPlayerUpload({
         name: name.trim(),
-        city: city.trim(),
+        position: position.trim(),
+        team_id: Number(teamId),
         file: file as File,
       });
 
-      setSuccess("Equipo creado exitosamente. Redirigiendo al panel de administración…");
-      setTimeout(() => nav("/admin"), 1300);
+      setSuccess("Jugador creado exitosamente. Redirigiendo…");
+      setTimeout(() => nav("/admin"), 1200);
     } catch (e: any) {
       const status = e?.response?.status;
-      if (status === 409) setError("Ya existe un equipo con ese nombre.");
-      else if (status === 422) setError("Revisa los campos requeridos.");
-      else setError(e?.message || "No se pudo crear el equipo.");
+      if (status === 409) setError("Ya existe un jugador con ese nombre en ese equipo.");
+      else if (status === 422) setError("Revisa los campos requeridos (todos son obligatorios).");
+      else setError(e?.message || "No se pudo crear el jugador.");
     } finally {
       setSubmitting(false);
     }
@@ -91,7 +134,7 @@ export default function CreateTeam() {
         borderRadius: "12px",
         boxShadow: "0 4px 20px rgba(0, 0, 0, 0.2)",
         width: "100%",
-        maxWidth: "600px"
+        maxWidth: "640px"
       }}>
         <form onSubmit={onSubmit}>
           <h2 style={{
@@ -101,7 +144,7 @@ export default function CreateTeam() {
             fontSize: "28px",
             fontWeight: 600
           }}>
-            Crear Equipo
+            Crear Jugador
           </h2>
 
           <div style={{
@@ -159,12 +202,7 @@ export default function CreateTeam() {
           )}
 
           <div style={{ marginBottom: "20px" }}>
-            <label style={{
-              display: "block",
-              marginBottom: "8px",
-              fontWeight: 500,
-              color: "#a0aec0"
-            }}>
+            <label style={{ display: "block", marginBottom: "8px", fontWeight: 500, color: "#a0aec0" }}>
               Nombre:
             </label>
             <input
@@ -189,42 +227,93 @@ export default function CreateTeam() {
           </div>
 
           <div style={{ marginBottom: "20px" }}>
-            <label style={{
-              display: "block",
-              marginBottom: "8px",
-              fontWeight: 500,
-              color: "#a0aec0"
-            }}>
-              Ciudad:
+            <label style={{ display: "block", marginBottom: "8px", fontWeight: 500, color: "#a0aec0" }}>
+              Posición:
             </label>
-            <input
-              value={city}
-              onChange={(e) => setCity(e.target.value)}
+            <select
+              value={position}
+              onChange={(e) => setPosition(e.target.value)}
               required
-              minLength={2}
               style={{
                 width: "100%",
                 padding: "12px",
                 border: "2px solid #4a5568",
                 borderRadius: "6px",
                 fontSize: "16px",
-                transition: "border-color 0.3s",
-                outline: "none",
                 backgroundColor: "#1a202c",
-                color: "#e2e8f0"
+                color: "#e2e8f0",
+                outline: "none"
               }}
               onFocus={(e) => (e.target.style.borderColor = "#63b3ed")}
               onBlur={(e) => (e.target.style.borderColor = "#4a5568")}
-            />
+            >
+              <option value="" disabled>
+                Selecciona una posición
+              </option>
+              {POSITIONS.map((pos) => (
+                <option key={pos.value} value={pos.value} style={{ backgroundColor: "#2d3748", color: "#e2e8f0" }}>
+                  {pos.label}
+                </option>
+              ))}
+            </select>
           </div>
 
           <div style={{ marginBottom: "20px" }}>
-            <label style={{
-              display: "block",
-              marginBottom: "8px",
-              fontWeight: 500,
-              color: "#a0aec0"
-            }}>
+            <label style={{ display: "block", marginBottom: "8px", fontWeight: 500, color: "#a0aec0" }}>
+              Equipo:
+            </label>
+            {loadingTeams ? (
+              <div style={{ 
+                padding: "12px", 
+                color: "#a0aec0",
+                backgroundColor: "#1a202c",
+                border: "2px solid #4a5568",
+                borderRadius: "6px"
+              }}>
+                Cargando equipos...
+              </div>
+            ) : teams.length === 0 ? (
+              <div style={{ 
+                padding: "12px", 
+                color: "#ff8a8a",
+                backgroundColor: "rgba(255, 100, 100, 0.1)",
+                border: "2px solid #c33",
+                borderRadius: "6px"
+              }}>
+                No hay equipos disponibles. Por favor crea un equipo primero.
+              </div>
+            ) : (
+              <select
+                value={teamId}
+                onChange={(e) => setTeamId(e.target.value ? Number(e.target.value) : "")}
+                required
+                style={{
+                  width: "100%",
+                  padding: "12px",
+                  border: "2px solid #4a5568",
+                  borderRadius: "6px",
+                  fontSize: "16px",
+                  backgroundColor: "#1a202c",
+                  color: "#e2e8f0",
+                  outline: "none"
+                }}
+                onFocus={(e) => (e.target.style.borderColor = "#63b3ed")}
+                onBlur={(e) => (e.target.style.borderColor = "#4a5568")}
+              >
+                <option value="" disabled>
+                  Selecciona un equipo
+                </option>
+                {teams.map((t) => (
+                  <option key={t.id} value={t.id} style={{ backgroundColor: "#2d3748", color: "#e2e8f0" }}>
+                    {t.name} {t.city ? `(${t.city})` : ""}
+                  </option>
+                ))}
+              </select>
+            )}
+          </div>
+
+          <div style={{ marginBottom: "20px" }}>
+            <label style={{ display: "block", marginBottom: "8px", fontWeight: 500, color: "#a0aec0" }}>
               Archivo de imagen:
             </label>
             <div>
@@ -293,7 +382,7 @@ export default function CreateTeam() {
               transition: "background-color 0.3s"
             }}
           >
-            {submitting ? "Creando…" : "Crear Equipo"}
+            {submitting ? "Creando…" : "Crear Jugador"}
           </button>
         </form>
       </div>

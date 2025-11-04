@@ -67,7 +67,7 @@ def list_teams(
     user_id: Optional[int] = None,
     db: Session = Depends(get_db)
 ):
-    return service.list_teams(db=db, q=q, active=active, user_id=user_id)
+    return service.list_teams(db=db, query=q, active_only=active, user_id=user_id)
 
 # D) Get by id
 @router.get("/{team_id}", response_model=TeamOut)

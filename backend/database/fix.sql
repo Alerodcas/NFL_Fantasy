@@ -1,3 +1,3 @@
-SELECT id, name,role
-FROM users 
+SELECT id, name
+FROM players 
 ORDER BY id;
