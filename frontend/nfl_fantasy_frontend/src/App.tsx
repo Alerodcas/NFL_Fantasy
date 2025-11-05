@@ -8,6 +8,7 @@ import LeagueForm from "./features/leagues/components/LeagueForm";
 import JoinLeague from "./features/leagues/components/JoinLeague";
 import AdminProfile from './features/admin/AdminProfile';
 import CreateSeason from './features/seasons/CreateSeason';
+import PlayerForm from './features/players/components/PlayerForm';
 import { AuthProvider } from './shared/context/AuthContext';
 import { useAuth } from './shared/hooks/useAuth';
 
@@ -66,6 +67,14 @@ function App() {
             element={
               <PrivateRoute>
                 <JoinLeague />
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/players/new"
+            element={
+              <PrivateRoute>
+                <PlayerForm />
               </PrivateRoute>
             }
           />

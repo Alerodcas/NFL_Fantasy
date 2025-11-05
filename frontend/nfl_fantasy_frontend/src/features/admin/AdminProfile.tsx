@@ -116,6 +116,21 @@ export default function AdminProfile() {
               Crear Equipo
             </button>
           </div>
+
+          {/* Jugadores */}
+          <div style={{ backgroundColor: '#2d3748', border: '1px solid #4a5568', borderRadius: 12, padding: 20 }}>
+            <h3 style={{ color: '#e2e8f0', fontSize: 18, fontWeight: 600, margin: '0 0 6px 0' }}>Gestión de Jugadores</h3>
+            <p style={{ color: '#a0aec0', fontSize: 14, margin: '0 0 16px 0' }}>Crear y administrar jugadores asociados a equipos</p>
+            <button
+              onClick={() => navigate('/players/new')}
+              style={{
+                width: '100%', padding: '12px', backgroundColor: '#63b3ed', color: 'white',
+                border: 'none', borderRadius: 6, fontWeight: 600, cursor: 'pointer'
+              }}
+            >
+              Crear Jugador
+            </button>
+          </div>
         </div>
 
         {/* Admin info */}
