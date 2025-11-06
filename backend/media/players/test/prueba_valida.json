@@ -1,0 +1,23 @@
+[
+  {
+    "id": "2001",
+    "name": "Josh Allen",
+    "position": "QB",
+    "team": "Kansas City Chiefs",
+    "image": "https://example.com/Stefon.jpg"
+  },
+  {
+    "id": "2002",
+    "name": "Stefon Diggs",
+    "position": "WR",
+    "team": "Kansas City Chiefs",
+    "image": "https://example.com/Stefon.jpg"
+  },
+  {
+    "id": "2004",
+    "name": "James Cook",
+    "position": "RB",
+    "team": "Kansas City Chiefs",
+    "image": "https://example.com/Stefon.jpg"
+  }
+]
