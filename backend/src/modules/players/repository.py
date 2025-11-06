@@ -17,6 +17,7 @@ def get_by_name_ci_for_team(db: Session, *, team_id: int, name: str) -> Optional
     ).scalar_one_or_none()
 
 
+
 def create_player(
     db: Session,
     *,
