@@ -5,7 +5,8 @@ from sqlalchemy.orm import sessionmaker
 # URL de conexión a tu base de datos PostgreSQL
 # Formato: "postgresql://user:password@host/dbname"
 #SQLALCHEMY_DATABASE_URL = "postgresql://postgres:160103@localhost/nfl_fantasy"
-SQLALCHEMY_DATABASE_URL = "postgresql://postgres:07122002@localhost/NFL_Fantasy"
+#SQLALCHEMY_DATABASE_URL = "postgresql://postgres:07122002@localhost/NFL_Fantasy"
+SQLALCHEMY_DATABASE_URL = "postgresql://postgres:07122002@localhost:5432/postgres"
 
 engine = create_engine(SQLALCHEMY_DATABASE_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
