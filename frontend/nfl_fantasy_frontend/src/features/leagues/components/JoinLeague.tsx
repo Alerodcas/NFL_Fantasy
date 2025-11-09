@@ -1,12 +1,23 @@
+<<<<<<< HEAD
 import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { searchLeagues, joinLeague, LeagueSearchResult, JoinLeagueRequest, uploadFantasyTeamImage } from '../../../services/leagues';
+=======
+import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { searchLeagues, joinLeague, LeagueSearchResult, JoinLeagueRequest } from '../../../services/leagues';
+import { listTeams, Team } from '../../../services/teams';
+>>>>>>> main
 import { useAuth } from '../../../shared/hooks/useAuth';
 
 const JoinLeague = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [leagues, setLeagues] = useState<LeagueSearchResult[]>([]);
+<<<<<<< HEAD
+=======
+  const [teams, setTeams] = useState<Team[]>([]);
+>>>>>>> main
   const [loading, setLoading] = useState(false);
   const [loadingLeagues, setLoadingLeagues] = useState(true);
   const [error, setError] = useState('');
@@ -21,6 +32,7 @@ const JoinLeague = () => {
   const [showModal, setShowModal] = useState(false);
   const [password, setPassword] = useState('');
   const [userAlias, setUserAlias] = useState('');
+<<<<<<< HEAD
   // Fantasy team fields
   const [fantasyName, setFantasyName] = useState('');
   // City removed for fantasy teams
@@ -29,10 +41,17 @@ const JoinLeague = () => {
   const [uploadingImage, setUploadingImage] = useState(false);
   const [uploadedFileName, setUploadedFileName] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
+=======
+  const [selectedTeamId, setSelectedTeamId] = useState<number | null>(null);
+>>>>>>> main
 
   // Cargar ligas al inicio
   useEffect(() => {
     loadLeagues();
+<<<<<<< HEAD
+=======
+    loadUserTeams();
+>>>>>>> main
   }, []);
 
   const loadLeagues = async () => {
@@ -52,7 +71,21 @@ const JoinLeague = () => {
     }
   };
 
+<<<<<<< HEAD
   // No need to load user teams. Fantasy team is created on join
+=======
+  const loadUserTeams = async () => {
+    try {
+      if (!user) return;
+      // Obtener solo equipos del usuario que NO estén en una liga
+      const allTeams = await listTeams({ user_id: user.id });
+      // Nota: El backend debería filtrar esto, pero por ahora lo hacemos aquí
+      setTeams(allTeams);
+    } catch (err) {
+      console.error('Error al cargar equipos:', err);
+    }
+  };
+>>>>>>> main
 
   const handleSearch = () => {
     loadLeagues();
@@ -67,9 +100,13 @@ const JoinLeague = () => {
     setShowModal(true);
     setPassword('');
     setUserAlias('');
+<<<<<<< HEAD
   setFantasyName('');
   setFantasyImageUrl('');
   setFantasyThumbUrl('');
+=======
+    setSelectedTeamId(null);
+>>>>>>> main
     setError('');
     setSuccess('');
   };
@@ -79,20 +116,28 @@ const JoinLeague = () => {
     setSelectedLeague(null);
     setPassword('');
     setUserAlias('');
+<<<<<<< HEAD
   setFantasyName('');
   setFantasyImageUrl('');
   setFantasyThumbUrl('');
+=======
+    setSelectedTeamId(null);
+>>>>>>> main
     setError('');
   };
 
   const handleSubmitJoin = async (e: React.FormEvent) => {
     e.preventDefault();
     
+<<<<<<< HEAD
     if (!selectedLeague) return;
     if (fantasyName.trim().length < 2) {
       setError('Ingresa un nombre válido para tu equipo de fantasía');
       return;
     }
+=======
+    if (!selectedLeague || !selectedTeamId) return;
+>>>>>>> main
     
     setLoading(true);
     setError('');
@@ -102,10 +147,14 @@ const JoinLeague = () => {
       const payload: JoinLeagueRequest = {
         password,
         user_alias: userAlias,
+<<<<<<< HEAD
         fantasy_team: {
           name: fantasyName.trim(),
           image_url: fantasyImageUrl.trim() || undefined,
         },
+=======
+        team_id: selectedTeamId,
+>>>>>>> main
       };
 
       const result = await joinLeague(selectedLeague.id, payload);
@@ -220,6 +269,10 @@ const JoinLeague = () => {
                   border: '1px solid #4a5568',
                   borderRadius: '6px',
                   color: '#e2e8f0',
+<<<<<<< HEAD
+=======
+                  fontSize: '14px',
+>>>>>>> main
                 }}
                 onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
               />
@@ -558,6 +611,7 @@ const JoinLeague = () => {
                   marginBottom: '8px',
                   fontWeight: '600',
                 }}>
+<<<<<<< HEAD
                   Equipo de Fantasía
                 </label>
                 <input
@@ -651,6 +705,40 @@ const JoinLeague = () => {
                     <span style={{ color: '#a0aec0' }}>Preview del thumbnail</span>
                   )}
                 </div>
+=======
+                  Selecciona tu Equipo *
+                </label>
+                <select
+                  value={selectedTeamId || ''}
+                  onChange={(e) => setSelectedTeamId(Number(e.target.value))}
+                  required
+                  style={{
+                    width: '100%',
+                    padding: '12px',
+                    backgroundColor: '#1a202c',
+                    border: '1px solid #4a5568',
+                    borderRadius: '6px',
+                    color: '#e2e8f0',
+                    fontSize: '14px',
+                  }}
+                  disabled={loading}
+                >
+                  <option value="">-- Selecciona un equipo --</option>
+                  {teams.map((team) => (
+                    <option key={team.id} value={team.id}>
+                      {team.name} ({team.city})
+                    </option>
+                  ))}
+                </select>
+                <small style={{
+                  color: '#a0aec0',
+                  fontSize: '12px',
+                  display: 'block',
+                  marginTop: '6px',
+                }}>
+                  Solo se muestran equipos que no están en otra liga
+                </small>
+>>>>>>> main
               </div>
 
               {/* Buttons */}
@@ -679,7 +767,11 @@ const JoinLeague = () => {
                 </button>
                 <button
                   type="submit"
+<<<<<<< HEAD
                   disabled={loading || !password || !userAlias || fantasyName.trim().length < 2}
+=======
+                  disabled={loading || !password || !userAlias || !selectedTeamId}
+>>>>>>> main
                   style={{
                     flex: 1,
                     padding: '12px',
@@ -687,9 +779,15 @@ const JoinLeague = () => {
                     color: 'white',
                     border: 'none',
                     borderRadius: '6px',
+<<<<<<< HEAD
                     cursor: (loading || !password || !userAlias || fantasyName.trim().length < 2) ? 'not-allowed' : 'pointer',
                     fontWeight: '600',
                     opacity: (loading || !password || !userAlias || fantasyName.trim().length < 2) ? 0.6 : 1,
+=======
+                    cursor: (loading || !password || !userAlias || !selectedTeamId) ? 'not-allowed' : 'pointer',
+                    fontWeight: '600',
+                    opacity: (loading || !password || !userAlias || !selectedTeamId) ? 0.6 : 1,
+>>>>>>> main
                   }}
                 >
                   {loading ? 'Uniéndose...' : 'Unirse a la Liga'}

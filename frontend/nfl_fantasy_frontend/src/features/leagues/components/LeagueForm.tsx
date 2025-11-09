@@ -1,9 +1,19 @@
+<<<<<<< HEAD
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { createLeague, LeagueCreatePayload, LeagueCreatedResponse, uploadFantasyTeamImage } from "../../../services/leagues";
 import { isValidPassword, passwordErrorMessage } from "../../../utils/password";
 
 const TEAM_SIZES = [4,6,8,10,12,14,16,18,20] as const;
+=======
+import { useEffect, useMemo, useState } from "react";
+import { useNavigate, Link } from "react-router-dom";
+import { createLeague, LeagueCreatePayload, LeagueCreatedResponse } from "../../../services/leagues";
+import { listTeams, Team } from "../../../services/teams";
+
+const TEAM_SIZES = [4,6,8,10,12,14,16,18,20] as const;
+const PASSWORD_RE = /^(?=.*[a-z])(?=.*[A-Z])[A-Za-z0-9]{8,12}$/;
+>>>>>>> main
 
 import { useAuth } from "../../../shared/hooks/useAuth";
 
@@ -22,6 +32,7 @@ export default function LeagueForm() {
   const [playoffFormat, setPlayoffFormat] = useState<number>(4);
   const [allowDecimal, setAllowDecimal] = useState(true);
 
+<<<<<<< HEAD
   // Fantasy team (commissioner) fields
   const [fantasyTeamName, setFantasyTeamName] = useState("");
   const [fantasyTeamImageUrl, setFantasyTeamImageUrl] = useState("");
@@ -29,6 +40,12 @@ export default function LeagueForm() {
   const [uploadingImage, setUploadingImage] = useState(false);
   const [uploadedFileName, setUploadedFileName] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
+=======
+  // Teams (selector)
+  const [teams, setTeams] = useState<Team[]>([]);
+  const [teamId, setTeamId] = useState<number | null>(null); // se envía como team_id
+  const [teamsLoading, setTeamsLoading] = useState<boolean>(false);
+>>>>>>> main
 
   // UI state
   const [submitting, setSubmitting] = useState(false);
@@ -40,13 +57,34 @@ export default function LeagueForm() {
   const currentUserId = useMemo(() => getCurrentUserId(auth.user), [auth.user]);
 
   useEffect(() => {
+<<<<<<< HEAD
     // No need to pre-load real teams; fantasy team is created with the league
+=======
+    (async () => {
+      try {
+        setTeamsLoading(true);
+        const data = await listTeams({ 
+          user_id: currentUserId || undefined,
+          active: true // Only get active teams
+        });
+        setTeams(data);
+        // If user has teams, select the first one
+  if (data.length > 0) setTeamId(data[0].id);
+      } catch (e) {
+        // si falla, deja teams vacío; el backend validará propiedad igualmente
+        setTeams([]);
+      } finally {
+        setTeamsLoading(false);
+      }
+    })();
+>>>>>>> main
   }, [currentUserId]);
 
   const validate = (): string | null => {
     const nm = name.trim();
     if (nm.length < 1 || nm.length > 100) return "El nombre de la liga debe tener entre 1 y 100 caracteres.";
     if (!TEAM_SIZES.includes(maxTeams as any)) return "Cantidad de equipos no válida.";
+<<<<<<< HEAD
   const pwdErr = passwordErrorMessage(password);
   if (pwdErr) return pwdErr;
     if (![4,6].includes(playoffFormat)) return "El formato de playoffs debe ser 4 o 6.";
@@ -71,6 +109,14 @@ export default function LeagueForm() {
     }
   };
 
+=======
+    if (!PASSWORD_RE.test(password)) return "La contraseña debe tener 8–12 caracteres alfanuméricos e incluir al menos una minúscula y una mayúscula.";
+    if (![4,6].includes(playoffFormat)) return "El formato de playoffs debe ser 4 o 6.";
+  if (!teamId) return "Debes seleccionar un equipo.";
+    return null;
+  };
+
+>>>>>>> main
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
@@ -87,10 +133,14 @@ export default function LeagueForm() {
       password,
       playoff_format: playoffFormat as any,
       allow_decimal_scoring: allowDecimal,
+<<<<<<< HEAD
       fantasy_team: {
         name: fantasyTeamName.trim(),
         image_url: fantasyTeamImageUrl.trim() || undefined,
       },
+=======
+      team_id: teamId!, // 👈 enviamos el id del equipo seleccionado, nunca null
+>>>>>>> main
     };
     console.log('[DEBUG] Payload enviado al backend:', payload);
 
@@ -360,6 +410,7 @@ export default function LeagueForm() {
 
           <hr style={{ borderColor: "#4a5568", margin: "24px 0" }} />
 
+<<<<<<< HEAD
           {/* --- Equipo de Fantasía del comisionado (se crea con la liga) --- */}
           <h3 style={{ color: "#e2e8f0", marginBottom: "12px", fontWeight: 600 }}>Equipo de Fantasía (Comisionado)</h3>
           <div style={{ marginBottom: "16px" }}>
@@ -396,6 +447,26 @@ export default function LeagueForm() {
               value={fantasyTeamImageUrl}
               onChange={(e) => setFantasyTeamImageUrl(e.target.value)}
               placeholder="https://…"
+=======
+          {/* --- Equipo del comisionado (selección) --- */}
+          <h3 style={{ color: "#e2e8f0", marginBottom: "12px", fontWeight: 600 }}>Selecciona tu equipo</h3>
+          <p style={{ color: "#a0aec0", marginTop: "-4px", marginBottom: "12px" }}>
+            Solo podrás asignar un equipo que te pertenezca y que no esté ya en otra liga.
+          </p>
+
+          <div style={{ marginBottom: "22px" }}>
+            <label style={{ display: "block", marginBottom: "8px", fontWeight: 500, color: "#a0aec0" }}>
+              Equipo:
+            </label>
+
+            <select
+              value={teamId ?? ""}
+              onChange={(e) => {
+                const val = e.target.value;
+                setTeamId(val ? Number(val) : null);
+              }}
+              disabled={teamsLoading || teams.length === 0}
+>>>>>>> main
               style={{
                 width: "100%",
                 padding: "12px",
@@ -404,6 +475,7 @@ export default function LeagueForm() {
                 fontSize: "16px",
                 outline: "none",
                 backgroundColor: "#1a202c",
+<<<<<<< HEAD
                 color: "#e2e8f0",
                 transition: "border-color 0.3s"
               }}
@@ -454,6 +526,36 @@ export default function LeagueForm() {
               ) : (
                 <span style={{ color: '#a0aec0' }}>Preview del thumbnail</span>
               )}
+=======
+                color: teamsLoading ? "#a0aec0" : "#e2e8f0",
+                transition: "border-color 0.3s",
+                appearance: "none"
+              }}
+              onFocus={(e) => (e.target.style.borderColor = "#63b3ed")}
+              onBlur={(e) => (e.target.style.borderColor = "#4a5568")}
+            >
+              {teamsLoading && <option value="">Cargando equipos…</option>}
+              {!teamsLoading && teams.length === 0 && <option value="">No hay equipos disponibles</option>}
+              {!teamsLoading && teams.length > 0 && teams.map((t) => (
+                <option key={t.id} value={t.id}>
+                  {t.name} — {t.city}
+                </option>
+              ))}
+            </select>
+
+            {/* Atajo para crear equipo si el usuario no tiene */}
+            <div style={{ marginTop: "10px" }}>
+              <Link
+                to="/teams/new"
+                style={{
+                  color: "#63b3ed",
+                  textDecoration: "underline",
+                  fontSize: "14px"
+                }}
+              >
+                ¿No tienes equipo? Crea uno
+              </Link>
+>>>>>>> main
             </div>
           </div>
 
@@ -477,7 +579,11 @@ export default function LeagueForm() {
 
           <button
             type="submit"
+<<<<<<< HEAD
             disabled={submitting}
+=======
+            disabled={submitting || teamsLoading || teams.length === 0}
+>>>>>>> main
             style={{
               width: "100%",
               padding: "14px",
@@ -487,7 +593,11 @@ export default function LeagueForm() {
               borderRadius: "6px",
               fontSize: "16px",
               fontWeight: 600,
+<<<<<<< HEAD
               cursor: submitting ? "not-allowed" : "pointer",
+=======
+              cursor: (submitting || teamsLoading || teams.length === 0) ? "not-allowed" : "pointer",
+>>>>>>> main
               transition: "background-color 0.3s"
             }}
           >

@@ -8,10 +8,14 @@ export type LeagueCreatePayload = {
   password: string;          // 8–12 alphanumeric, at least one lower + one upper
   playoff_format: 4|6;
   allow_decimal_scoring: boolean;
+<<<<<<< HEAD
   fantasy_team: {
     name: string;
     image_url?: string;
   };
+=======
+  team_id: number;
+>>>>>>> main
 };
 
 export type LeagueCreatedResponse = {
@@ -54,10 +58,14 @@ export type LeagueSearchResult = {
 export type JoinLeagueRequest = {
   password: string;
   user_alias: string;
+<<<<<<< HEAD
   fantasy_team: {
     name: string;
     image_url?: string;
   };
+=======
+  team_id: number;
+>>>>>>> main
 };
 
 export type JoinLeagueResponse = {
@@ -68,6 +76,7 @@ export type JoinLeagueResponse = {
   joined_at: string;
 };
 
+<<<<<<< HEAD
 /**
  * Search leagues by filters. To prevent accidental enumeration, this function
  * requires at least one filter. If no filters are provided, it returns an empty array
@@ -84,10 +93,14 @@ export async function searchLeagues(filters?: LeagueSearchFilters) {
     return [];
   }
 
+=======
+export async function searchLeagues(filters?: LeagueSearchFilters) {
+>>>>>>> main
   const res = await api.get<LeagueSearchResult[]>("/leagues/search", { params: filters });
   return res.data;
 }
 
+<<<<<<< HEAD
 /** Convenience helper when searching by name only. */
 export async function searchLeaguesByName(name: string) {
   const trimmed = name.trim();
@@ -95,10 +108,13 @@ export async function searchLeaguesByName(name: string) {
   return searchLeagues({ name: trimmed });
 }
 
+=======
+>>>>>>> main
 export async function joinLeague(leagueId: number, payload: JoinLeagueRequest) {
   const res = await api.post<JoinLeagueResponse>(`/leagues/${leagueId}/join`, payload);
   return res.data;
 }
+<<<<<<< HEAD
 
 export type UploadFantasyTeamImageResponse = {
   image_url: string;
@@ -113,3 +129,5 @@ export async function uploadFantasyTeamImage(file: File) {
   });
   return res.data;
 }
+=======
+>>>>>>> main

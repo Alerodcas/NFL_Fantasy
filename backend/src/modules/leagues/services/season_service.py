@@ -123,6 +123,7 @@ class SeasonService:
             if season_data.is_current:
                 SeasonService.unset_current_season(db)
             
+<<<<<<< HEAD
             # Crear array de semanas para el cache
             cached_weeks = []
             if season_data.weeks:
@@ -134,6 +135,9 @@ class SeasonService:
                     })
 
             # Crear temporada con semanas cacheadas
+=======
+            # Crear temporada
+>>>>>>> main
             season = Season(
                 name=season_data.name,
                 year=season_data.start_date.year,
@@ -141,14 +145,22 @@ class SeasonService:
                 start_date=season_data.start_date,
                 end_date=season_data.end_date,
                 is_current=season_data.is_current,
+<<<<<<< HEAD
                 created_by=user_id,
                 cached_weeks=cached_weeks
+=======
+                created_by=user_id
+>>>>>>> main
             )
             
             db.add(season)
             db.flush()  # Para obtener el ID
             
+<<<<<<< HEAD
             # Crear semanas en la tabla de weeks (para mantener compatibilidad)
+=======
+            # Crear semanas
+>>>>>>> main
             if season_data.weeks:
                 for week_data in season_data.weeks:
                     week = Week(
@@ -234,7 +246,11 @@ class SeasonService:
     
     @staticmethod
     def get_season(db: Session, season_id: int) -> Season:
+<<<<<<< HEAD
         """Obtiene una temporada por ID usando las semanas cacheadas"""
+=======
+        """Obtiene una temporada por ID"""
+>>>>>>> main
         season = db.query(Season).filter(Season.id == season_id).first()
         
         if not season:
@@ -244,6 +260,7 @@ class SeasonService:
             )
         
         return season
+<<<<<<< HEAD
     
     @staticmethod
     def get_weeks_from_cache(season: Season) -> List[WeekCreate]:
@@ -269,3 +286,5 @@ class SeasonService:
             })
         season.cached_weeks = cached_weeks
         db.commit()
+=======
+>>>>>>> main

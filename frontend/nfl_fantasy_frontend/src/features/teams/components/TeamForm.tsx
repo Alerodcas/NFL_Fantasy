@@ -64,8 +64,13 @@ export default function CreateTeam() {
         file: file as File,
       });
 
+<<<<<<< HEAD
       setSuccess("Equipo creado exitosamente. Redirigiendo al panel de administración…");
       setTimeout(() => nav("/admin"), 1300);
+=======
+      setSuccess("Equipo creado exitosamente. Redirigiendo al perfil…");
+      setTimeout(() => nav("/profile"), 1300);
+>>>>>>> main
     } catch (e: any) {
       const status = e?.response?.status;
       if (status === 409) setError("Ya existe un equipo con ese nombre.");
@@ -111,7 +116,11 @@ export default function CreateTeam() {
             marginBottom: "20px"
           }}>
             <Link
+<<<<<<< HEAD
               to="/admin"
+=======
+              to="/profile"
+>>>>>>> main
               style={{
                 padding: "8px 16px",
                 backgroundColor: "#2d3748",
@@ -128,7 +137,11 @@ export default function CreateTeam() {
               onMouseOver={(e) => (e.currentTarget.style.borderColor = "#63b3ed")}
               onMouseOut={(e) => (e.currentTarget.style.borderColor = "#4a5568")}
             >
+<<<<<<< HEAD
               ← Volver al Panel de Administración
+=======
+              ← Volver al Perfil
+>>>>>>> main
             </Link>
           </div>
 

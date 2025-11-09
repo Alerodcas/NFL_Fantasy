@@ -166,7 +166,11 @@ export default function CreateSeason() {
       });
 
       alert('Temporada creada exitosamente');
+<<<<<<< HEAD
       navigate('/admin');
+=======
+      navigate('/admin/seasons');
+>>>>>>> main
     } catch (err: any) {
       console.error('Error creating season:', err);
       setError(err.response?.data?.detail || 'Error al crear la temporada');
