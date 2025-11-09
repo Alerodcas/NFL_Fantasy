@@ -1,6 +1,10 @@
 import React, { useState } from 'react';
 import api from '../../../services/apiService';
 import { useNavigate, Link } from 'react-router-dom';
+<<<<<<< HEAD
+import { passwordErrorMessage } from '../../../utils/password';
+=======
+>>>>>>> main
 
 const RegisterForm = () => {
 	const [name, setName] = useState('');
@@ -26,11 +30,20 @@ const RegisterForm = () => {
 			return;
 		}
 
+<<<<<<< HEAD
+			const pwdErr = passwordErrorMessage(password);
+			if (pwdErr) {
+				setError(pwdErr);
+				setLoading(false);
+				return;
+			}
+=======
 		if (!password || password.length < 8) {
 			setError('La contraseña debe tener al menos 8 caracteres.');
 			setLoading(false);
 			return;
 		}
+>>>>>>> main
 
 		try {
 			console.log('Enviando petición de registro...');

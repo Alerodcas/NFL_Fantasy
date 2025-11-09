@@ -75,10 +75,13 @@ const ProfilePage = () => {
 		logout();
 		navigate('/login');
 	};
+<<<<<<< HEAD
+=======
 
 	const handleCreateTeam = () => {
 		navigate('/teams/new');
 	};
+>>>>>>> main
 	const handleCreateLeague = () => {
 		navigate('/create-league');
 	};
@@ -86,6 +89,13 @@ const ProfilePage = () => {
 		navigate('/join-league');
 	};
 
+<<<<<<< HEAD
+	const handleBackToAdmin = () => {
+		navigate('/admin');
+	};
+
+=======
+>>>>>>> main
 	return (
 		<div style={{
 			minHeight: '100vh',
@@ -264,6 +274,28 @@ const ProfilePage = () => {
 						</div>
 					</div>
 
+<<<<<<< HEAD
+					{user.role && user.role.toLowerCase() === 'admin' && (
+						<button
+							onClick={handleBackToAdmin}
+							style={{
+								width: '100%',
+								padding: '14px',
+								backgroundColor: '#805ad5',
+								color: 'white',
+								border: 'none',
+								borderRadius: '6px',
+								fontSize: '16px',
+								fontWeight: '600',
+								cursor: 'pointer',
+								transition: 'background-color 0.3s',
+								marginBottom: '10px'
+							}}
+						>
+							Volver a Administracion
+						</button>
+					)}
+=======
 						<button
 						onClick={handleCreateTeam}
 						style={{
@@ -282,6 +314,7 @@ const ProfilePage = () => {
 					>
 						Crear Equipo
 					</button>
+>>>>>>> main
 
 					<button
 						onClick={handleCreateLeague}

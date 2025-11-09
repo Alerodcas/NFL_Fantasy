@@ -1,6 +1,6 @@
 from pydantic import BaseModel, EmailStr, Field, field_validator
 from typing import Annotated
-import re
+from ...core.validators import validate_password
 
 # Esquema para la creación de un usuario
 class UserCreate(BaseModel):
@@ -12,16 +12,7 @@ class UserCreate(BaseModel):
     @field_validator('password')
     @classmethod
     def validate_password(cls, v):
-        # Verificar longitud en bytes para bcrypt
-        if len(v.encode('utf-8')) > 72:
-            raise ValueError('Password is too long (max 72 bytes)')
-        if not re.search(r'[a-z]', v):
-            raise ValueError('Password must contain at least one lowercase letter')
-        if not re.search(r'[A-Z]', v):
-            raise ValueError('Password must contain at least one uppercase letter')
-        if not re.search(r'\d', v):
-            raise ValueError('Password must contain at least one digit')
-        return v
+        return validate_password(v)
 
 # Esquema para mostrar los datos de un usuario (sin contraseña)
 class User(BaseModel):
@@ -44,13 +35,8 @@ class UserUpdate(BaseModel):
     @field_validator('password')
     @classmethod
     def validate_password(cls, v):
-        if v is not None:  # Solo validar si se proporciona una contraseña
-            if not re.search(r'[a-z]', v):
-                raise ValueError('Password must contain at least one lowercase letter')
-            if not re.search(r'[A-Z]', v):
-                raise ValueError('Password must contain at least one uppercase letter')
-            if not re.search(r'\d', v):
-                raise ValueError('Password must contain at least one digit')
+        if v is not None:
+            return validate_password(v)
         return v
 
 

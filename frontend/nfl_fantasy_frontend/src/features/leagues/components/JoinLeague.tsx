@@ -1,14 +1,23 @@
+<<<<<<< HEAD
+import React, { useEffect, useRef, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { searchLeagues, joinLeague, LeagueSearchResult, JoinLeagueRequest, uploadFantasyTeamImage } from '../../../services/leagues';
+=======
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { searchLeagues, joinLeague, LeagueSearchResult, JoinLeagueRequest } from '../../../services/leagues';
 import { listTeams, Team } from '../../../services/teams';
+>>>>>>> main
 import { useAuth } from '../../../shared/hooks/useAuth';
 
 const JoinLeague = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [leagues, setLeagues] = useState<LeagueSearchResult[]>([]);
+<<<<<<< HEAD
+=======
   const [teams, setTeams] = useState<Team[]>([]);
+>>>>>>> main
   const [loading, setLoading] = useState(false);
   const [loadingLeagues, setLoadingLeagues] = useState(true);
   const [error, setError] = useState('');
@@ -23,12 +32,26 @@ const JoinLeague = () => {
   const [showModal, setShowModal] = useState(false);
   const [password, setPassword] = useState('');
   const [userAlias, setUserAlias] = useState('');
+<<<<<<< HEAD
+  // Fantasy team fields
+  const [fantasyName, setFantasyName] = useState('');
+  // City removed for fantasy teams
+  const [fantasyImageUrl, setFantasyImageUrl] = useState('');
+  const [fantasyThumbUrl, setFantasyThumbUrl] = useState('');
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const [uploadedFileName, setUploadedFileName] = useState('');
+  const fileInputRef = useRef<HTMLInputElement>(null);
+=======
   const [selectedTeamId, setSelectedTeamId] = useState<number | null>(null);
+>>>>>>> main
 
   // Cargar ligas al inicio
   useEffect(() => {
     loadLeagues();
+<<<<<<< HEAD
+=======
     loadUserTeams();
+>>>>>>> main
   }, []);
 
   const loadLeagues = async () => {
@@ -48,6 +71,9 @@ const JoinLeague = () => {
     }
   };
 
+<<<<<<< HEAD
+  // No need to load user teams. Fantasy team is created on join
+=======
   const loadUserTeams = async () => {
     try {
       if (!user) return;
@@ -59,6 +85,7 @@ const JoinLeague = () => {
       console.error('Error al cargar equipos:', err);
     }
   };
+>>>>>>> main
 
   const handleSearch = () => {
     loadLeagues();
@@ -73,7 +100,13 @@ const JoinLeague = () => {
     setShowModal(true);
     setPassword('');
     setUserAlias('');
+<<<<<<< HEAD
+  setFantasyName('');
+  setFantasyImageUrl('');
+  setFantasyThumbUrl('');
+=======
     setSelectedTeamId(null);
+>>>>>>> main
     setError('');
     setSuccess('');
   };
@@ -83,14 +116,28 @@ const JoinLeague = () => {
     setSelectedLeague(null);
     setPassword('');
     setUserAlias('');
+<<<<<<< HEAD
+  setFantasyName('');
+  setFantasyImageUrl('');
+  setFantasyThumbUrl('');
+=======
     setSelectedTeamId(null);
+>>>>>>> main
     setError('');
   };
 
   const handleSubmitJoin = async (e: React.FormEvent) => {
     e.preventDefault();
     
+<<<<<<< HEAD
+    if (!selectedLeague) return;
+    if (fantasyName.trim().length < 2) {
+      setError('Ingresa un nombre válido para tu equipo de fantasía');
+      return;
+    }
+=======
     if (!selectedLeague || !selectedTeamId) return;
+>>>>>>> main
     
     setLoading(true);
     setError('');
@@ -100,7 +147,14 @@ const JoinLeague = () => {
       const payload: JoinLeagueRequest = {
         password,
         user_alias: userAlias,
+<<<<<<< HEAD
+        fantasy_team: {
+          name: fantasyName.trim(),
+          image_url: fantasyImageUrl.trim() || undefined,
+        },
+=======
         team_id: selectedTeamId,
+>>>>>>> main
       };
 
       const result = await joinLeague(selectedLeague.id, payload);
@@ -215,7 +269,10 @@ const JoinLeague = () => {
                   border: '1px solid #4a5568',
                   borderRadius: '6px',
                   color: '#e2e8f0',
+<<<<<<< HEAD
+=======
                   fontSize: '14px',
+>>>>>>> main
                 }}
                 onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
               />
@@ -554,6 +611,101 @@ const JoinLeague = () => {
                   marginBottom: '8px',
                   fontWeight: '600',
                 }}>
+<<<<<<< HEAD
+                  Equipo de Fantasía
+                </label>
+                <input
+                  type="text"
+                  placeholder="Nombre del equipo"
+                  value={fantasyName}
+                  onChange={(e) => setFantasyName(e.target.value)}
+                  required
+                  style={{
+                    width: '100%', padding: '12px', backgroundColor: '#1a202c',
+                    border: '1px solid #4a5568', borderRadius: '6px', color: '#e2e8f0', fontSize: '14px'
+                  }}
+                  disabled={loading}
+                />
+                {/* City removed for fantasy teams */}
+                <div style={{ height: 10 }} />
+                <input
+                  type="text"
+                  placeholder="Imagen (URL opcional)"
+                  value={fantasyImageUrl}
+                  onChange={(e) => setFantasyImageUrl(e.target.value)}
+                  style={{
+                    width: '100%', padding: '12px', backgroundColor: '#1a202c',
+                    border: '1px solid #4a5568', borderRadius: '6px', color: '#e2e8f0', fontSize: '14px'
+                  }}
+                  disabled={loading}
+                />
+                <div style={{ marginTop: 12 }}>
+                  <label style={{ color: '#a0aec0', display: 'block', marginBottom: 6 }}>…o sube un archivo:</label>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept=".png,.jpg,.jpeg,.webp"
+                    disabled={loading || uploadingImage}
+                    style={{ display: 'none' }}
+                    onChange={async (e) => {
+                      const file = e.target.files?.[0];
+                      if (!file) return;
+                      setUploadingImage(true);
+                      setError('');
+                      try {
+                        const { image_url, thumbnail_url } = await uploadFantasyTeamImage(file);
+                        setFantasyImageUrl(image_url);
+                        setFantasyThumbUrl(thumbnail_url);
+                        setUploadedFileName(file.name);
+                      } catch (err: any) {
+                        setError(err?.response?.data?.detail || 'No se pudo subir la imagen.');
+                      } finally {
+                        setUploadingImage(false);
+                      }
+                    }}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={loading || uploadingImage}
+                    style={{
+                      width: '100%',
+                      padding: '12px',
+                      backgroundColor: '#2d3748',
+                      color: '#e2e8f0',
+                      border: '2px solid #4a5568',
+                      borderRadius: '6px',
+                      fontSize: '14px',
+                      cursor: (loading || uploadingImage) ? 'not-allowed' : 'pointer',
+                      transition: 'all 0.3s',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '8px'
+                    }}
+                    onMouseOver={(e) => (e.currentTarget.style.borderColor = '#63b3ed')}
+                    onMouseOut={(e) => (e.currentTarget.style.borderColor = '#4a5568')}
+                  >
+                    {uploadedFileName ? uploadedFileName : (uploadingImage ? 'Subiendo…' : 'Elegir archivo')}
+                  </button>
+                </div>
+                <div style={{
+                  marginTop: 12,
+                  height: 160,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  border: '2px dashed #4a5568',
+                  borderRadius: 6,
+                  backgroundColor: '#1a202c'
+                }}>
+                  {(fantasyThumbUrl || fantasyImageUrl) ? (
+                    <img src={fantasyThumbUrl || fantasyImageUrl} style={{ maxWidth: 100, maxHeight: 100, borderRadius: 4 }} alt="Thumbnail Preview" />
+                  ) : (
+                    <span style={{ color: '#a0aec0' }}>Preview del thumbnail</span>
+                  )}
+                </div>
+=======
                   Selecciona tu Equipo *
                 </label>
                 <select
@@ -586,6 +738,7 @@ const JoinLeague = () => {
                 }}>
                   Solo se muestran equipos que no están en otra liga
                 </small>
+>>>>>>> main
               </div>
 
               {/* Buttons */}
@@ -614,7 +767,11 @@ const JoinLeague = () => {
                 </button>
                 <button
                   type="submit"
+<<<<<<< HEAD
+                  disabled={loading || !password || !userAlias || fantasyName.trim().length < 2}
+=======
                   disabled={loading || !password || !userAlias || !selectedTeamId}
+>>>>>>> main
                   style={{
                     flex: 1,
                     padding: '12px',
@@ -622,9 +779,15 @@ const JoinLeague = () => {
                     color: 'white',
                     border: 'none',
                     borderRadius: '6px',
+<<<<<<< HEAD
+                    cursor: (loading || !password || !userAlias || fantasyName.trim().length < 2) ? 'not-allowed' : 'pointer',
+                    fontWeight: '600',
+                    opacity: (loading || !password || !userAlias || fantasyName.trim().length < 2) ? 0.6 : 1,
+=======
                     cursor: (loading || !password || !userAlias || !selectedTeamId) ? 'not-allowed' : 'pointer',
                     fontWeight: '600',
                     opacity: (loading || !password || !userAlias || !selectedTeamId) ? 0.6 : 1,
+>>>>>>> main
                   }}
                 >
                   {loading ? 'Uniéndose...' : 'Unirse a la Liga'}

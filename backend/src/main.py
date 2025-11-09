@@ -8,12 +8,16 @@ from starlette.staticfiles import StaticFiles
 from .config.database import engine
 from .modules.users import models as user_models
 from .modules.teams import models as team_models
+from .modules.fantasy_teams import models as fantasy_team_models
+from .modules.players import models as player_models
 from .modules.leagues.router import router as leagues_router
 
 
 # Create tables
 user_models.Base.metadata.create_all(bind=engine)
 team_models.Base.metadata.create_all(bind=engine)
+fantasy_team_models.Base.metadata.create_all(bind=engine)
+player_models.Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
 
@@ -31,6 +35,7 @@ BASE_DIR = Path(__file__).resolve().parent
 MEDIA_DIR = BASE_DIR / "media"                       
 MEDIA_DIR.mkdir(parents=True, exist_ok=True)
 ( MEDIA_DIR / "teams" ).mkdir(parents=True, exist_ok=True)
+( MEDIA_DIR / "players" ).mkdir(parents=True, exist_ok=True)
 
 app.mount("/media", StaticFiles(directory=str(MEDIA_DIR)), name="media")
 
@@ -38,12 +43,15 @@ app.mount("/media", StaticFiles(directory=str(MEDIA_DIR)), name="media")
 
 from .modules.users.router import router as users_router
 from .modules.teams.router import router as teams_router
+# Fantasy teams will be wired via league flows; expose router later if needed
 from .modules.leagues.routes.season_routes import router as season_router
+from .modules.players.router import router as players_router
 
 app.include_router(users_router, tags=["users"])
 app.include_router(teams_router, prefix="/teams", tags=["teams"])
 app.include_router(leagues_router, tags=["leagues"])
 app.include_router(season_router, prefix="/api", tags=["seasons"])
+app.include_router(players_router, prefix="/players", tags=["players"])
 
 
 # 422 handler

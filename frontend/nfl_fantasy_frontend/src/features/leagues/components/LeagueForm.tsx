@@ -1,3 +1,11 @@
+<<<<<<< HEAD
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useNavigate, Link } from "react-router-dom";
+import { createLeague, LeagueCreatePayload, LeagueCreatedResponse, uploadFantasyTeamImage } from "../../../services/leagues";
+import { isValidPassword, passwordErrorMessage } from "../../../utils/password";
+
+const TEAM_SIZES = [4,6,8,10,12,14,16,18,20] as const;
+=======
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { createLeague, LeagueCreatePayload, LeagueCreatedResponse } from "../../../services/leagues";
@@ -5,6 +13,7 @@ import { listTeams, Team } from "../../../services/teams";
 
 const TEAM_SIZES = [4,6,8,10,12,14,16,18,20] as const;
 const PASSWORD_RE = /^(?=.*[a-z])(?=.*[A-Z])[A-Za-z0-9]{8,12}$/;
+>>>>>>> main
 
 import { useAuth } from "../../../shared/hooks/useAuth";
 
@@ -23,10 +32,20 @@ export default function LeagueForm() {
   const [playoffFormat, setPlayoffFormat] = useState<number>(4);
   const [allowDecimal, setAllowDecimal] = useState(true);
 
+<<<<<<< HEAD
+  // Fantasy team (commissioner) fields
+  const [fantasyTeamName, setFantasyTeamName] = useState("");
+  const [fantasyTeamImageUrl, setFantasyTeamImageUrl] = useState("");
+  const [fantasyTeamThumbUrl, setFantasyTeamThumbUrl] = useState("");
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const [uploadedFileName, setUploadedFileName] = useState("");
+  const fileInputRef = useRef<HTMLInputElement>(null);
+=======
   // Teams (selector)
   const [teams, setTeams] = useState<Team[]>([]);
   const [teamId, setTeamId] = useState<number | null>(null); // se envía como team_id
   const [teamsLoading, setTeamsLoading] = useState<boolean>(false);
+>>>>>>> main
 
   // UI state
   const [submitting, setSubmitting] = useState(false);
@@ -38,6 +57,9 @@ export default function LeagueForm() {
   const currentUserId = useMemo(() => getCurrentUserId(auth.user), [auth.user]);
 
   useEffect(() => {
+<<<<<<< HEAD
+    // No need to pre-load real teams; fantasy team is created with the league
+=======
     (async () => {
       try {
         setTeamsLoading(true);
@@ -55,18 +77,46 @@ export default function LeagueForm() {
         setTeamsLoading(false);
       }
     })();
+>>>>>>> main
   }, [currentUserId]);
 
   const validate = (): string | null => {
     const nm = name.trim();
     if (nm.length < 1 || nm.length > 100) return "El nombre de la liga debe tener entre 1 y 100 caracteres.";
     if (!TEAM_SIZES.includes(maxTeams as any)) return "Cantidad de equipos no válida.";
+<<<<<<< HEAD
+  const pwdErr = passwordErrorMessage(password);
+  if (pwdErr) return pwdErr;
+    if (![4,6].includes(playoffFormat)) return "El formato de playoffs debe ser 4 o 6.";
+  if (fantasyTeamName.trim().length < 2) return "El nombre del equipo de fantasía debe tener al menos 2 caracteres.";
+    return null;
+  };
+
+  const onFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setError(null);
+    setUploadingImage(true);
+    try {
+      const { image_url, thumbnail_url } = await uploadFantasyTeamImage(file);
+      setFantasyTeamImageUrl(image_url);
+      setFantasyTeamThumbUrl(thumbnail_url);
+      setUploadedFileName(file.name);
+    } catch (err: any) {
+      setError(err?.response?.data?.detail || "No se pudo subir la imagen.");
+    } finally {
+      setUploadingImage(false);
+    }
+  };
+
+=======
     if (!PASSWORD_RE.test(password)) return "La contraseña debe tener 8–12 caracteres alfanuméricos e incluir al menos una minúscula y una mayúscula.";
     if (![4,6].includes(playoffFormat)) return "El formato de playoffs debe ser 4 o 6.";
   if (!teamId) return "Debes seleccionar un equipo.";
     return null;
   };
 
+>>>>>>> main
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
@@ -83,7 +133,14 @@ export default function LeagueForm() {
       password,
       playoff_format: playoffFormat as any,
       allow_decimal_scoring: allowDecimal,
+<<<<<<< HEAD
+      fantasy_team: {
+        name: fantasyTeamName.trim(),
+        image_url: fantasyTeamImageUrl.trim() || undefined,
+      },
+=======
       team_id: teamId!, // 👈 enviamos el id del equipo seleccionado, nunca null
+>>>>>>> main
     };
     console.log('[DEBUG] Payload enviado al backend:', payload);
 
@@ -353,6 +410,44 @@ export default function LeagueForm() {
 
           <hr style={{ borderColor: "#4a5568", margin: "24px 0" }} />
 
+<<<<<<< HEAD
+          {/* --- Equipo de Fantasía del comisionado (se crea con la liga) --- */}
+          <h3 style={{ color: "#e2e8f0", marginBottom: "12px", fontWeight: 600 }}>Equipo de Fantasía (Comisionado)</h3>
+          <div style={{ marginBottom: "16px" }}>
+            <label style={{ display: "block", marginBottom: "8px", fontWeight: 500, color: "#a0aec0" }}>
+              Nombre del equipo:
+            </label>
+            <input
+              value={fantasyTeamName}
+              onChange={(e) => setFantasyTeamName(e.target.value)}
+              required
+              style={{
+                width: "100%",
+                padding: "12px",
+                border: "2px solid #4a5568",
+                borderRadius: "6px",
+                fontSize: "16px",
+                outline: "none",
+                backgroundColor: "#1a202c",
+                color: "#e2e8f0",
+                transition: "border-color 0.3s"
+              }}
+              onFocus={(e) => (e.target.style.borderColor = "#63b3ed")}
+              onBlur={(e) => (e.target.style.borderColor = "#4a5568")}
+            />
+          </div>
+
+          {/* Campo de ciudad eliminado para equipos de fantasía */}
+
+          <div style={{ marginBottom: "22px" }}>
+            <label style={{ display: "block", marginBottom: "8px", fontWeight: 500, color: "#a0aec0" }}>
+              Imagen (URL opcional):
+            </label>
+            <input
+              value={fantasyTeamImageUrl}
+              onChange={(e) => setFantasyTeamImageUrl(e.target.value)}
+              placeholder="https://…"
+=======
           {/* --- Equipo del comisionado (selección) --- */}
           <h3 style={{ color: "#e2e8f0", marginBottom: "12px", fontWeight: 600 }}>Selecciona tu equipo</h3>
           <p style={{ color: "#a0aec0", marginTop: "-4px", marginBottom: "12px" }}>
@@ -371,6 +466,7 @@ export default function LeagueForm() {
                 setTeamId(val ? Number(val) : null);
               }}
               disabled={teamsLoading || teams.length === 0}
+>>>>>>> main
               style={{
                 width: "100%",
                 padding: "12px",
@@ -379,6 +475,58 @@ export default function LeagueForm() {
                 fontSize: "16px",
                 outline: "none",
                 backgroundColor: "#1a202c",
+<<<<<<< HEAD
+                color: "#e2e8f0",
+                transition: "border-color 0.3s"
+              }}
+              onFocus={(e) => (e.target.style.borderColor = "#63b3ed")}
+              onBlur={(e) => (e.target.style.borderColor = "#4a5568")}
+            />
+            <div style={{ marginTop: 12 }}>
+              <label style={{ color: "#a0aec0", display: 'block', marginBottom: 6 }}>…o sube un archivo:</label>
+              <input ref={fileInputRef} type="file" accept=".png,.jpg,.jpeg,.webp" onChange={onFileChange} style={{ display: 'none' }} />
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={uploadingImage}
+                style={{
+                  width: "100%",
+                  padding: "12px",
+                  backgroundColor: "#2d3748",
+                  color: "#e2e8f0",
+                  border: "2px solid #4a5568",
+                  borderRadius: "6px",
+                  fontSize: "16px",
+                  cursor: uploadingImage ? 'not-allowed' : 'pointer',
+                  transition: "all 0.3s",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: "8px"
+                }}
+                onMouseOver={(e) => (e.currentTarget.style.borderColor = "#63b3ed")}
+                onMouseOut={(e) => (e.currentTarget.style.borderColor = "#4a5568")}
+              >
+                {uploadedFileName ? uploadedFileName : (uploadingImage ? "Subiendo…" : "Elegir archivo")}
+              </button>
+            </div>
+
+            <div style={{
+              marginTop: 12,
+              height: 160,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              border: '2px dashed #4a5568',
+              borderRadius: 6,
+              backgroundColor: '#1a202c'
+            }}>
+              {(fantasyTeamThumbUrl || fantasyTeamImageUrl) ? (
+                <img src={fantasyTeamThumbUrl || fantasyTeamImageUrl} style={{ maxWidth: 100, maxHeight: 100, borderRadius: 4 }} alt="Thumbnail Preview" />
+              ) : (
+                <span style={{ color: '#a0aec0' }}>Preview del thumbnail</span>
+              )}
+=======
                 color: teamsLoading ? "#a0aec0" : "#e2e8f0",
                 transition: "border-color 0.3s",
                 appearance: "none"
@@ -407,6 +555,7 @@ export default function LeagueForm() {
               >
                 ¿No tienes equipo? Crea uno
               </Link>
+>>>>>>> main
             </div>
           </div>
 
@@ -430,7 +579,11 @@ export default function LeagueForm() {
 
           <button
             type="submit"
+<<<<<<< HEAD
+            disabled={submitting}
+=======
             disabled={submitting || teamsLoading || teams.length === 0}
+>>>>>>> main
             style={{
               width: "100%",
               padding: "14px",
@@ -440,7 +593,11 @@ export default function LeagueForm() {
               borderRadius: "6px",
               fontSize: "16px",
               fontWeight: 600,
+<<<<<<< HEAD
+              cursor: submitting ? "not-allowed" : "pointer",
+=======
               cursor: (submitting || teamsLoading || teams.length === 0) ? "not-allowed" : "pointer",
+>>>>>>> main
               transition: "background-color 0.3s"
             }}
           >

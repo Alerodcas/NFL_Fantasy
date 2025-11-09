@@ -1,8 +1,14 @@
 from pydantic import BaseModel, Field, field_validator, validator, model_validator, ConfigDict
 from typing import Optional, Literal, List
+from ...core.validators import validate_password
 from datetime import date, datetime
 
 _ALLOWED_TEAM_SIZES = {4, 6, 8, 10, 12, 14, 16, 18, 20}
+
+class FantasyTeamPayload(BaseModel):
+    name: str = Field(..., min_length=2, max_length=128)
+    image_url: Optional[str] = None
+
 
 class LeagueCreate(BaseModel):
     name: str = Field(..., min_length=1, max_length=100)
@@ -12,7 +18,7 @@ class LeagueCreate(BaseModel):
     playoff_format: Literal[4, 6]
     allow_decimal_scoring: bool = True
 
-    team_id: int = Field(..., ge=1)
+    fantasy_team: FantasyTeamPayload
 
     @field_validator("max_teams")
     @classmethod
@@ -24,12 +30,7 @@ class LeagueCreate(BaseModel):
     @field_validator("password")
     @classmethod
     def validate_password(cls, v: str):
-        import re
-        if not re.fullmatch(r"(?=.*[a-z])(?=.*[A-Z])[A-Za-z0-9]{8,12}", v):
-            raise ValueError(
-                "Password must be 8–12 chars, alphanumeric, include at least one lowercase and one uppercase."
-            )
-        return v
+        return validate_password(v)
 
 
 class LeagueCreated(BaseModel):
@@ -117,6 +118,11 @@ class SeasonUpdate(BaseModel):
             return v.strip()
         return v
 
+class CachedWeek(BaseModel):
+    week_number: int
+    start_date: date
+    end_date: date
+
 class SeasonResponse(BaseModel):
     id: int
     name: str
@@ -126,6 +132,7 @@ class SeasonResponse(BaseModel):
     end_date: date
     is_current: bool
     created_by: int
+    cached_weeks: List[CachedWeek] = []
     weeks: List[WeekResponse] = []
     
     model_config = ConfigDict(from_attributes=True)
@@ -155,7 +162,7 @@ class LeagueSearchResult(BaseModel):
 class JoinLeagueRequest(BaseModel):
     password: str = Field(..., min_length=8, max_length=12)
     user_alias: str = Field(..., min_length=1, max_length=50, description="Alias del usuario en esta liga")
-    team_id: int = Field(..., ge=1, description="ID del equipo a usar en la liga")
+    fantasy_team: FantasyTeamPayload
     
     @field_validator("user_alias")
     @classmethod
