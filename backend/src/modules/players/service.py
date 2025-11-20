@@ -121,26 +121,18 @@ def _process_image_from_url(image_url: str, subdir: str = "players") -> Tuple[st
     # En caso de querer guardar la original en media también, implementá descarga explícita.
     return image_url, thumb
 
-def process_players_batch(db: Session, *, file_path: str, created_by: int) -> Dict[str, Any]:
-    from sqlalchemy.exc import IntegrityError
-    from pathlib import Path
+def process_players_batch(db: Session, *, file, created_by: int):
     import json
 
-    p = Path(file_path)
-    if not p.exists():
-        raise ValueError("Archivo no encontrado.")
-
-    # Cargar JSON
     try:
-        with p.open("r", encoding="utf-8") as f:
-            data = json.load(f)
-    except json.JSONDecodeError:
-        raise ValueError("JSON malformado.")
+        data = json.load(file)
+    except Exception:
+        raise ValueError("JSON malformado o ilegible")
 
     if not isinstance(data, list):
-        raise ValueError("El archivo debe contener un array de jugadores.")
+        raise ValueError("El JSON debe contener un array de jugadores")
 
-    errors: List[str] = []
+    errors = []
     normalized_items = []
 
     for idx, item in enumerate(data, start=1):
@@ -149,68 +141,56 @@ def process_players_batch(db: Session, *, file_path: str, created_by: int) -> Di
             errors.extend(item_errors)
             continue
 
-        team_name = item.get("team") or item.get("team_name")
+        team_name = item.get("team")
         if not team_name:
-            errors.append(f"Fila {idx}: campo 'team' faltante")
+            errors.append(f"Fila {idx}: falta campo 'team'")
             continue
 
         team = get_by_name_ci(db, team_name.strip())
         if not team:
-            errors.append(f"Fila {idx}: equipo '{team_name}' no encontrado")
+            errors.append(f"Fila {idx}: equipo '{team_name}' no existe")
             continue
 
-        team_id = team.id
-
-
-        existing = get_by_name_ci_for_team(db, team_id=int(team_id), name=item["name"])
+        existing = get_by_name_ci_for_team(db, name=item["name"], team_id=team.id)
         if existing:
-            errors.append(f"Fila {idx}: jugador '{item['name']}' ya existe en equipo id {team_id}")
+            errors.append(f"Fila {idx}: '{item['name']}' ya existe en equipo '{team_name}'")
+            continue
 
         normalized_items.append({
             "id": item.get("id"),
             "name": item["name"].strip(),
-            "position": item["position"],
-            "team_id": int(team_id),
+            "position": item["position"].strip().upper(),
+            "team_id": team.id,
             "image": item["image"],
         })
 
     if errors:
         raise ValueError("Errores de validación:\n" + "\n".join(errors))
 
+    # Si pasó validación, crear en DB
     created = []
-    try:
-        # sin `with db.begin()`
-        for item in normalized_items:
-            image_url = item["image"]
-            try:
-                thumb_url = try_download_and_thumb(image_url, subdir="players")
-            except Exception as e:
-                raise ValueError(f"Error al procesar imagen para '{item['name']}': {str(e)}")
 
-            player_obj = models.Player(
-                id=int(item["id"]) if item.get("id") not in (None, "") else None,
+    try:
+        for item in normalized_items:
+            thumb_url = try_download_and_thumb(item["image"], subdir="players")
+
+            player = models.Player(
+                id=int(item["id"]) if item.get("id") else None,
                 name=item["name"],
                 position=item["position"],
-                image_url=image_url,
+                team_id=item["team_id"],
+                image_url=item["image"],
                 thumbnail_url=thumb_url,
                 is_active=True,
-                created_by=created_by,
-                team_id=item["team_id"],
+                created_by=created_by
             )
-            db.add(player_obj)
+            db.add(player)
             created.append(item["name"])
 
-        # opcional: commit explícito (si `get_db` no lo hace automáticamente)
         db.commit()
+        return {"created": created}
 
-        return {"created": created, "errors": []}
-
-    except IntegrityError as ie:
-        db.rollback()
-        raise ValueError(f"Error de integridad en BD: {str(ie.orig)}")
-    except ValueError:
+    except Exception:
         db.rollback()
         raise
-    except Exception as e:
-        db.rollback()
-        raise
+

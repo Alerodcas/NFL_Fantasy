@@ -9,7 +9,7 @@ import JoinLeague from "./features/leagues/components/JoinLeague";
 import AdminProfile from './features/admin/AdminProfile';
 import CreateSeason from './features/seasons/CreateSeason';
 import PlayerForm from './features/players/components/PlayerForm';
-import BatchPlayers from './features/players/components/playerBatch';
+import BatchPlayers from './features/players/components/PlayerBatch';
 import { AuthProvider } from './shared/context/AuthContext';
 import { useAuth } from './shared/hooks/useAuth';
 
