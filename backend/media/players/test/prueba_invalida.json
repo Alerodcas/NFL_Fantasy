@@ -9,14 +9,14 @@
   {
     "id": "2002",
     "name": "Stefon Diggs",
-    "position": "WR",
+    "position": "RB",
     "team": "Kansas City Chiefs",
-    "image": "https://example.com/Stefon.jpg"
+    "image": "https://example.com/invalid.jpg"
   },
   {
     "id": "2003",
     "name": "Invalid Player",
-    "position": "COACH", 
+    "position": "RB", 
     "team": "Kansas City Chiefs",
     "image": "https://example.com/invalid.jpg"
   },
