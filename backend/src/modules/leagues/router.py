@@ -7,6 +7,7 @@ from ..users.router import get_current_user
 from . import schemas
 from .services.league_service import create_league_with_commissioner_team, search_leagues as svc_search_leagues, join_league as svc_join_league
 from ...core.media import ensure_subdir, make_thumb_from_path, public_url
+from ...config.paths import PATH_FANTASY_TEAMS
 
 router = APIRouter(prefix="/leagues", tags=["leagues"])
 
@@ -203,7 +204,7 @@ def upload_fantasy_team_image(
     Esto permite a los formularios enviar un archivo y luego usar la URL resultante en la creación/unión de liga.
     """
     # Guardar archivo bajo media/fantasy_teams y generar thumbnail
-    ft_dir = ensure_subdir("fantasy_teams")
+    ft_dir = ensure_subdir(PATH_FANTASY_TEAMS)
     filename = image.filename or "upload.png"
     import os, uuid
     ext = os.path.splitext(filename)[1].lower()

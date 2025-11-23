@@ -1,6 +1,7 @@
 from typing import Optional, List
 from sqlalchemy.orm import Session
 from ...core.media import try_download_and_thumb, ensure_subdir, public_url, make_thumb_from_path
+from ...config.paths import PATH_TEAMS
 from . import models, schemas, repository
 import os
 import uuid
@@ -46,7 +47,7 @@ def create_team(
     elif payload.image_url:
         # URL-based image
         image_url = str(payload.image_url)
-        thumb_url = try_download_and_thumb(image_url, subdir="teams")
+        thumb_url = try_download_and_thumb(image_url, subdir=PATH_TEAMS)
     
     return repository.create_team(
         db,
@@ -110,7 +111,7 @@ def _save_team_upload(upload_file) -> tuple[str, str]:
     Save uploaded file and generate thumbnail.
     Returns (image_url, thumbnail_url).
     """
-    team_dir = ensure_subdir("teams")
+    team_dir = ensure_subdir(PATH_TEAMS)
     
     ext = os.path.splitext(upload_file.filename or "")[1].lower()
     if ext not in [".png", ".jpg", ".jpeg", ".webp"]:

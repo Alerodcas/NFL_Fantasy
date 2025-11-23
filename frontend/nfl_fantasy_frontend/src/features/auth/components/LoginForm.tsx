@@ -3,6 +3,7 @@ import { useAuth } from '../../../shared/hooks/useAuth';
 import { useNavigate, Link } from 'react-router-dom';
 import api from '../../../services/apiService';
 import axios from 'axios';
+import { API_BASE } from '../../../config/server';
 
 const LoginForm = () => {
 	const [email, setEmail] = useState('');
@@ -19,7 +20,7 @@ const LoginForm = () => {
 
 		try {
 			// Paso 1: Login y obtener token
-			const loginResponse = await axios.post('http://localhost:8000/login', {
+			const loginResponse = await axios.post(`${API_BASE}/login`, {
 				email: email,
 				password: password
 			}, {
@@ -30,7 +31,7 @@ const LoginForm = () => {
 			localStorage.setItem('token', access_token);
 
 			// Paso 2: Obtener información del usuario
-			const userResponse = await axios.get('http://localhost:8000/users/me/', {
+			const userResponse = await axios.get(`${API_BASE}/users/me/`, {
 				headers: { 
 					'Authorization': `Bearer ${access_token}` 
 				}

@@ -33,6 +33,13 @@ def create_player_json(
         raise HTTPException(status_code=422, detail="image_url is required for JSON payload")
     try:
         player = service.create_player(db=db, payload=payload, created_by=current_user.id)
+        try:
+            db.commit()
+            db.refresh(player)
+        except Exception:
+            db.rollback()
+            raise HTTPException(status_code=500, detail="Error saving player")
+
         return player
     except ValueError as ve:
         error_msg = str(ve)
@@ -55,6 +62,13 @@ def create_player_upload(
     try:
         payload = PlayerCreate(name=name, position=position, team_id=team_id, image_url=None)
         player = service.create_player(db=db, payload=payload, created_by=current_user.id, uploaded_file=image)
+        try:
+            db.commit()
+            db.refresh(player)
+        except Exception:
+            db.rollback()
+            raise HTTPException(status_code=500, detail="Error saving player")
+
         return player
     except ValueError as ve:
         error_msg = str(ve)

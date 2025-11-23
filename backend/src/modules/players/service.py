@@ -1,6 +1,7 @@
 from typing import Optional, List, Dict, Any, Tuple
 from sqlalchemy.orm import Session
 from ...core.media import try_download_and_thumb, ensure_subdir, public_url, make_thumb_from_path
+from ...config.paths import PATH_PLAYERS, PATH_PLAYERS_PROCESSED
 from ..teams.repository import get_by_id as get_team_by_id, get_by_name_ci
 from . import models, schemas, repository
 import os
@@ -9,6 +10,7 @@ from .repository import get_by_name_ci_for_team
 import os
 from pathlib import Path
 import json
+from datetime import datetime
 from sqlalchemy.exc import IntegrityError
 from contextlib import nullcontext
 
@@ -39,7 +41,7 @@ def create_player(
         image_url = payload.image_url
         if not image_url:
             raise ValueError("Image is required.")
-        thumb_url = try_download_and_thumb(image_url, subdir="players")
+        thumb_url = try_download_and_thumb(image_url, subdir=PATH_PLAYERS)
 
     player = models.Player(
         name=name,
@@ -59,7 +61,7 @@ def create_player(
 
 
 def _save_player_upload(upload_file) -> tuple[str, str]:
-    players_dir = ensure_subdir("players")
+    players_dir = ensure_subdir(PATH_PLAYERS)
 
     ext = os.path.splitext(upload_file.filename or "")[1].lower()
     if ext not in [".png", ".jpg", ".jpeg", ".webp"]:
@@ -180,9 +182,14 @@ def _process_image_from_url(image_url: str, subdir: str = "players") -> Tuple[st
 
 def process_players_batch(db: Session, *, file, created_by: int):
 
-    # Intentar leer JSON
+    # Intentar leer JSON (leer el contenido en memoria para poder guardar una copia procesada)
     try:
-        data = json.load(file)
+        raw_content = file.read()
+        if isinstance(raw_content, bytes):
+            text_content = raw_content.decode("utf-8")
+        else:
+            text_content = raw_content
+        data = json.loads(text_content)
     except Exception:
         raise ValueError("Malformed JSON or unreadable file")
 
@@ -248,6 +255,22 @@ def process_players_batch(db: Session, *, file, created_by: int):
             created.append(player.name)
 
         db.commit()
+
+        # Guardar una copia del archivo procesado con timestamp para evitar colisiones
+        try:
+                processed_dir = ensure_subdir(PATH_PLAYERS_PROCESSED)
+            ts = datetime.now().strftime("%Y%m%d_%H%M%S_%f")
+            fname = f"batch__{ts}.json"
+            out_path = processed_dir / fname
+            with open(out_path, "wb") as pf:
+                if isinstance(raw_content, bytes):
+                    pf.write(raw_content)
+                else:
+                    pf.write(text_content.encode("utf-8"))
+        except Exception:
+            # No romper el proceso si falla el guardado de la copia
+            pass
+
         return {"created": created}
 
     except (IntegrityError, ValueError) as e:

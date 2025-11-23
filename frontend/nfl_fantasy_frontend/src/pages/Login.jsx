@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import axios from 'axios';
+import { API_BASE } from '../config/server';
 
 export default function Login() {
   const navigate = useNavigate();
@@ -27,7 +28,7 @@ export default function Login() {
 
     try {
       // Paso 1: Login y obtener token
-      const loginResponse = await axios.post('http://localhost:8000/login', {
+      const loginResponse = await axios.post(`${API_BASE}/login`, {
         email: formData.email,
         password: formData.password
       }, {
@@ -38,7 +39,7 @@ export default function Login() {
       localStorage.setItem('token', access_token);
 
       // Paso 2: Obtener información del usuario
-      const userResponse = await axios.get('http://localhost:8000/users/me/', {
+      const userResponse = await axios.get(`${API_BASE}/users/me/`, {
         headers: { 
           'Authorization': `Bearer ${access_token}` 
         }

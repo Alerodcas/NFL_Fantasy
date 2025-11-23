@@ -1,7 +1,8 @@
 import axios from 'axios';
+import { API_BASE } from '../config/server';
 
 const api = axios.create({
-  baseURL: 'http://localhost:8000', // Cambiar a localhost para coincidir con CORS
+  baseURL: API_BASE,
 });
 
 // Interceptor para agregar el token JWT a cada solicitud

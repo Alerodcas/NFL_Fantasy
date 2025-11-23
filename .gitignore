@@ -24,3 +24,6 @@ env/
 ENV/
 env.bak/
 venv.bak/
+
+# Database config files, ignore changes to keep local settings private
+backend/src/config/database.py

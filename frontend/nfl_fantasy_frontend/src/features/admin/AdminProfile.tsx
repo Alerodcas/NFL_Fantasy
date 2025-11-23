@@ -2,6 +2,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../shared/hooks/useAuth';
 import { useEffect, useState } from 'react';
 import axios from 'axios';
+import { API_BASE } from '../../config/server';
 
 interface User {
   id: number;
@@ -26,7 +27,7 @@ export default function AdminProfile() {
           return;
         }
 
-        const response = await axios.get('http://localhost:8000/users/me/', {
+        const response = await axios.get(`${API_BASE}/users/me/`, {
           headers: { Authorization: `Bearer ${storedToken}` }
         });
 
