@@ -6,7 +6,7 @@ from ...core import audit
 from ..users.router import get_current_user
 from . import schemas
 from .services.league_service import create_league_with_commissioner_team, search_leagues as svc_search_leagues, join_league as svc_join_league
-from ...core.media import ensure_subdir, make_thumb_from_path, public_url
+from ...core.media import save_upload_file, public_url
 from ...config.paths import PATH_FANTASY_TEAMS
 
 router = APIRouter(prefix="/leagues", tags=["leagues"])
@@ -203,25 +203,19 @@ def upload_fantasy_team_image(
     Subida de imagen para equipos de fantasía. Devuelve URLs públicas de la imagen y su thumbnail.
     Esto permite a los formularios enviar un archivo y luego usar la URL resultante en la creación/unión de liga.
     """
-    # Guardar archivo bajo media/fantasy_teams y generar thumbnail
-    ft_dir = ensure_subdir(PATH_FANTASY_TEAMS)
-    filename = image.filename or "upload.png"
-    import os, uuid
-    ext = os.path.splitext(filename)[1].lower()
-    if ext not in [".png", ".jpg", ".jpeg", ".webp"]:
-        ext = ".png"
-    uid = uuid.uuid4().hex
-    img_path = ft_dir / f"{uid}{ext}"
+    # Delegate saving/upload handling to core.media.save_upload_file
     try:
-        with open(img_path, "wb") as f:
-            f.write(image.file.read())
-        image.file.seek(0)
-        thumb_path = make_thumb_from_path(img_path)
+        image_url, thumbnail_url = save_upload_file(image, PATH_FANTASY_TEAMS)
     finally:
         try:
             image.file.close()
         except Exception:
             pass
+
+    return {
+        "image_url": image_url,
+        "thumbnail_url": thumbnail_url,
+    }
 
     return {
         "image_url": public_url(img_path),

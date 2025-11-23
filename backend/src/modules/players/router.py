@@ -11,7 +11,7 @@ from sqlalchemy.orm import Session
 from ...config.database import get_db
 from ..users.router import get_current_user
 from .schemas import Player as PlayerOut, PlayerCreate
-from . import service
+from . import service, validators
 
 router = APIRouter()
 
@@ -31,8 +31,20 @@ def create_player_json(
     # Enforce all fields filled for JSON route: require image_url present
     if not payload.image_url:
         raise HTTPException(status_code=422, detail="image_url is required for JSON payload")
+    # Validate payload before calling service
     try:
-        player = service.create_player(db=db, payload=payload, created_by=current_user.id)
+        validated = validators.validate_single_player(db=db, payload=payload.dict())
+    except ValueError as ve:
+        error_msg = str(ve)
+        low = error_msg.lower()
+        if "already exists" in low or "ya existe" in low:
+            raise HTTPException(status_code=409, detail=error_msg)
+        raise HTTPException(status_code=422, detail=error_msg)
+
+    try:
+        # Build validated payload and create
+        validated_payload = PlayerCreate(**validated)
+        player = service.create_player(db=db, payload=validated_payload, created_by=current_user.id)
         try:
             db.commit()
             db.refresh(player)
@@ -43,7 +55,8 @@ def create_player_json(
         return player
     except ValueError as ve:
         error_msg = str(ve)
-        if "already exists" in error_msg:
+        low = error_msg.lower()
+        if "already exists" in low or "ya existe" in low:
             raise HTTPException(status_code=409, detail=error_msg)
         raise HTTPException(status_code=422, detail=error_msg)
 
@@ -61,6 +74,16 @@ def create_player_upload(
 
     try:
         payload = PlayerCreate(name=name, position=position, team_id=team_id, image_url=None)
+        # Validate using validators with the uploaded file
+        try:
+            validated = validators.validate_single_player(db=db, payload=payload.dict(), uploaded_file=image)
+        except ValueError as ve:
+            error_msg = str(ve)
+            low = error_msg.lower()
+            if "already exists" in low or "ya existe" in low:
+                raise HTTPException(status_code=409, detail=error_msg)
+            raise HTTPException(status_code=422, detail=error_msg)
+
         player = service.create_player(db=db, payload=payload, created_by=current_user.id, uploaded_file=image)
         try:
             db.commit()
@@ -70,12 +93,19 @@ def create_player_upload(
             raise HTTPException(status_code=500, detail="Error saving player")
 
         return player
+    except HTTPException:
+        # Re-raise HTTP errors so FastAPI can return the intended response body
+        raise
     except ValueError as ve:
         error_msg = str(ve)
-        if "already exists" in error_msg:
+        low = error_msg.lower()
+        if "already exists" in low or "ya existe" in low:
             raise HTTPException(status_code=409, detail=error_msg)
         raise HTTPException(status_code=422, detail=error_msg)
-    except Exception:
+    except Exception as e:
+        # Unexpected error; return a helpful message while logging the exception
+        import traceback
+        traceback.print_exc()
         raise HTTPException(status_code=400, detail="Invalid image file.")
     
 
