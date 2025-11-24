@@ -33,8 +33,4 @@ Index(
 )
 
 # Helper
-<<<<<<< HEAD
 Index("ix_teams_league_id", "league_id")
-=======
-Index("ix_teams_league_id", "league_id")
->>>>>>> main

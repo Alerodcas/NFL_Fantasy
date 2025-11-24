@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import { API_BASE } from '../../config/server';
 
 interface Week {
   week_number: number;
@@ -130,7 +131,7 @@ export default function CreateSeason() {
     if (formData.is_current) {
       try {
         const token = localStorage.getItem('token');
-        const seasonsResponse = await axios.get('http://localhost:8000/api/seasons/', {
+        const seasonsResponse = await axios.get(`${API_BASE}/api/seasons/`, {
           headers: {
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json'
@@ -158,7 +159,7 @@ export default function CreateSeason() {
         weeks: weeks
       };
 
-      await axios.post('http://localhost:8000/api/seasons/', payload, {
+      await axios.post(`${API_BASE}/api/seasons/`, payload, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -166,11 +167,7 @@ export default function CreateSeason() {
       });
 
       alert('Temporada creada exitosamente');
-<<<<<<< HEAD
       navigate('/admin');
-=======
-      navigate('/admin/seasons');
->>>>>>> main
     } catch (err: any) {
       console.error('Error creating season:', err);
       setError(err.response?.data?.detail || 'Error al crear la temporada');

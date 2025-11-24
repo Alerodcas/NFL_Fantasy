@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect } from 'react';
 import axios from 'axios';
+import { API_BASE } from '../config/server';
 
 const AuthContext = createContext(null);
 
@@ -12,7 +13,7 @@ export function AuthProvider({ children }) {
       const token = localStorage.getItem('token');
       if (token) {
         try {
-          const response = await axios.get('http://localhost:8000/users/me/', {
+          const response = await axios.get(`${API_BASE}/users/me/`, {
             headers: { Authorization: `Bearer ${token}` }
           });
           console.log('Usuario cargado en contexto:', response.data);

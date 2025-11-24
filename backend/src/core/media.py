@@ -10,7 +10,8 @@ from __future__ import annotations
 import os
 import uuid
 from pathlib import Path
-from typing import Optional, Tuple
+from typing import Optional, Tuple, Union
+from datetime import datetime
 
 import requests
 from PIL import Image
@@ -73,3 +74,50 @@ def try_download_and_thumb(image_url: str, subdir: str) -> Optional[str]:
         return public_url(thumb_path)
     except Exception:
         return None
+
+
+def save_upload_file(upload_file, subdir: str) -> Tuple[str, str]:
+    """Save an uploaded file (FastAPI UploadFile-like) into MEDIA_ROOT/subdir,
+    generate a thumbnail, and return (public_image_url, public_thumb_url).
+
+    This centralizes saving uploaded files so routers and services don't handle filesystem I/O.
+    """
+    target_dir = ensure_subdir(subdir)
+    ext = os.path.splitext(upload_file.filename or "")[1].lower()
+    if ext not in [".png", ".jpg", ".jpeg", ".webp"]:
+        ext = ".png"
+
+    uid = uuid.uuid4().hex
+    image_path = target_dir / f"{uid}{ext}"
+
+    # Read and write bytes
+    with open(image_path, "wb") as f:
+        content = upload_file.file.read()
+        f.write(content)
+    try:
+        upload_file.file.seek(0)
+    except Exception:
+        pass
+
+    thumb_path = make_thumb_from_path(image_path)
+    return public_url(image_path), public_url(thumb_path)
+
+
+def save_processed_copy(content: Union[bytes, str], subdir: str, prefix: str = "batch") -> Path:
+    """Save a processed copy (e.g. uploaded JSON) into MEDIA_ROOT/subdir with a timestamped filename.
+
+    Returns the Path to the written file. Does not raise on errors; any exception will propagate.
+    """
+    target_dir = ensure_subdir(subdir)
+    ts = datetime.now().strftime("%Y%m%d_%H%M%S_%f")
+    fname = f"{prefix}__{ts}.json"
+    out_path = target_dir / fname
+
+    # Write bytes or string
+    with open(out_path, "wb") as pf:
+        if isinstance(content, bytes):
+            pf.write(content)
+        else:
+            pf.write(str(content).encode("utf-8"))
+
+    return out_path

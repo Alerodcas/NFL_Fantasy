@@ -1,7 +1,8 @@
 import axios from 'axios';
+import { API_BASE } from '../config/server';
 
 const api = axios.create({
-  baseURL: 'http://localhost:8000', // Cambiar a localhost para coincidir con CORS
+  baseURL: API_BASE,
 });
 
 // Interceptor para agregar el token JWT a cada solicitud
@@ -14,6 +15,24 @@ api.interceptors.request.use(
     return config;
   },
   (error) => {
+    return Promise.reject(error);
+  }
+);
+
+// Response interceptor to normalize server-provided error details so components
+// can display `error.response.data.detail` reliably. We attach `serverDetail`
+// to the error object when present.
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    try {
+      const detail = error?.response?.data?.detail ?? error?.response?.data?.message ?? null;
+      if (detail) {
+        error.serverDetail = detail;
+      }
+    } catch (e) {
+      // swallow any parsing error and keep rejecting the original error
+    }
     return Promise.reject(error);
   }
 );

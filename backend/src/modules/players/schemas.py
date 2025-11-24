@@ -9,7 +9,7 @@ class PlayerCreate(BaseModel):
     name: Annotated[str, Field(min_length=2, max_length=128)]
     position: PositionType
     team_id: int
-    image_url: Optional[HttpUrl] = None  # required on JSON route; upload route uses file
+    image_url: Optional[str] = None
 
 class Player(BaseModel):
     id: int

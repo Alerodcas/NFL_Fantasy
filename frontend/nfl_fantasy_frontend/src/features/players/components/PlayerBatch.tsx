@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import axios from 'axios';
+import { API_BASE } from '../../../config/server';
 import { useNavigate } from 'react-router-dom';
 
 interface PlayerPreview {
@@ -61,7 +62,7 @@ export default function BatchPlayers() {
       // Endpoint
       const token = localStorage.getItem('token');
       const response = await axios.post(
-        'http://localhost:8000/players/batch-upload',
+        `${API_BASE}/players/batch-upload`,
         formData,
         {
             headers: {

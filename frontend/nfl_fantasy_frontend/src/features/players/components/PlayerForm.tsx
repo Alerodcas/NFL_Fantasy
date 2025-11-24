@@ -111,9 +111,10 @@ export default function PlayerForm() {
       setTimeout(() => nav("/admin"), 1200);
     } catch (e: any) {
       const status = e?.response?.status;
-      if (status === 409) setError("Ya existe un jugador con ese nombre en ese equipo.");
-      else if (status === 422) setError("Revisa los campos requeridos (todos son obligatorios).");
-      else setError(e?.message || "No se pudo crear el jugador.");
+      const serverDetail = e?.serverDetail || e?.response?.data?.detail;
+      if (status === 409) setError(serverDetail || "Ya existe un jugador con ese nombre en ese equipo.");
+      else if (status === 422) setError(serverDetail || "Revisa los campos requeridos (todos son obligatorios).");
+      else setError(serverDetail || e?.message || "No se pudo crear el jugador.");
     } finally {
       setSubmitting(false);
     }

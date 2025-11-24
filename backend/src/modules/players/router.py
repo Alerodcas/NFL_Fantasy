@@ -11,7 +11,8 @@ from sqlalchemy.orm import Session
 from ...config.database import get_db
 from ..users.router import get_current_user
 from .schemas import Player as PlayerOut, PlayerCreate
-from . import service
+from . import service, validators
+from ..media import repository as media_repo
 
 router = APIRouter()
 
@@ -31,12 +32,32 @@ def create_player_json(
     # Enforce all fields filled for JSON route: require image_url present
     if not payload.image_url:
         raise HTTPException(status_code=422, detail="image_url is required for JSON payload")
+    # Validate payload before calling service
     try:
-        player = service.create_player(db=db, payload=payload, created_by=current_user.id)
+        validated = validators.validate_single_player(db=db, payload=payload.dict())
+    except ValueError as ve:
+        error_msg = str(ve)
+        low = error_msg.lower()
+        if "already exists" in low or "ya existe" in low:
+            raise HTTPException(status_code=409, detail=error_msg)
+        raise HTTPException(status_code=422, detail=error_msg)
+
+    try:
+        # Build validated payload and create
+        validated_payload = PlayerCreate(**validated)
+        player = service.create_player(db=db, payload=validated_payload, created_by=current_user.id)
+        try:
+            db.commit()
+            db.refresh(player)
+        except Exception:
+            db.rollback()
+            raise HTTPException(status_code=500, detail="Error saving player")
+
         return player
     except ValueError as ve:
         error_msg = str(ve)
-        if "already exists" in error_msg:
+        low = error_msg.lower()
+        if "already exists" in low or "ya existe" in low:
             raise HTTPException(status_code=409, detail=error_msg)
         raise HTTPException(status_code=422, detail=error_msg)
 
@@ -54,14 +75,46 @@ def create_player_upload(
 
     try:
         payload = PlayerCreate(name=name, position=position, team_id=team_id, image_url=None)
-        player = service.create_player(db=db, payload=payload, created_by=current_user.id, uploaded_file=image)
+        # Validate using validators with the uploaded file
+        try:
+            validated = validators.validate_single_player(db=db, payload=payload.dict(), uploaded_file=image)
+        except ValueError as ve:
+            error_msg = str(ve)
+            low = error_msg.lower()
+            if "already exists" in low or "ya existe" in low:
+                raise HTTPException(status_code=409, detail=error_msg)
+            raise HTTPException(status_code=422, detail=error_msg)
+
+        # Persist the uploaded image using the media repository (persistence layer)
+        try:
+            image_url, thumb_url = media_repo.save_player_upload(image)
+        except Exception as e:
+            raise HTTPException(status_code=500, detail="Error saving uploaded image: " + str(e))
+
+        # Build payload including the saved image URL and create the player
+        validated_payload = PlayerCreate(**{**validated, "image_url": image_url})
+        player = service.create_player(db=db, payload=validated_payload, created_by=current_user.id, thumbnail_url=thumb_url)
+        try:
+            db.commit()
+            db.refresh(player)
+        except Exception:
+            db.rollback()
+            raise HTTPException(status_code=500, detail="Error saving player")
+
         return player
+    except HTTPException:
+        # Re-raise HTTP errors so FastAPI can return the intended response body
+        raise
     except ValueError as ve:
         error_msg = str(ve)
-        if "already exists" in error_msg:
+        low = error_msg.lower()
+        if "already exists" in low or "ya existe" in low:
             raise HTTPException(status_code=409, detail=error_msg)
         raise HTTPException(status_code=422, detail=error_msg)
-    except Exception:
+    except Exception as e:
+        # Unexpected error; return a helpful message while logging the exception
+        import traceback
+        traceback.print_exc()
         raise HTTPException(status_code=400, detail="Invalid image file.")
     
 
@@ -71,54 +124,24 @@ def batch_upload_players(
     db: Session = Depends(get_db),
     current_user = Depends(get_current_user),
 ):
-    # Solo admins
     _require_admin(current_user)
 
-    # Validaciones de archivo
-    filename = secure_filename(file.filename or "")
-    if not filename or not filename.lower().endswith(".json"):
-        raise HTTPException(status_code=400, detail="Se requiere un archivo .json")
+    if not file.filename.lower().endswith(".json"):
+        raise HTTPException(status_code=400, detail="Se requiere un archivo JSON")
 
-    # Rutas de almacenamiento (usar MEDIA_DIR relative a project)
-    from pathlib import Path
-    BASE_DIR = Path(__file__).resolve().parents[3]  # ajusta si es necesario
-    incoming_dir = BASE_DIR / "media" / "players" / "incoming"
-    processed_dir = BASE_DIR / "media" / "players" / "processed"
-    incoming_dir.mkdir(parents=True, exist_ok=True)
-    processed_dir.mkdir(parents=True, exist_ok=True)
-
-    incoming_path = incoming_dir / filename
-
-    # Guardar temporalmente el archivo
-    with open(incoming_path, "wb") as f:
-        shutil.copyfileobj(file.file, f)
-
-    # Procesar usando la capa de servicio
     try:
         result = service.process_players_batch(
             db=db,
-            file_path=str(incoming_path),
-            created_by=current_user.id,
+            file=file.file,           
+            created_by=current_user.id
         )
-
-        # mover archivo a processed con sufijo __processed.json
-        processed_name = filename.replace(".json", f"__processed.json")
-        (processed_dir / processed_name).unlink(missing_ok=True)  # por si existe
-        shutil.move(str(incoming_path), str(processed_dir / processed_name))
-
         return {
             "message": f"{len(result['created'])} jugadores creados correctamente.",
             "created": result["created"],
-            "errors": result["errors"],
         }
+
     except ValueError as ve:
-        # errores de validación (no crea nada)
-        # borrar archivo incoming o mover a processed con sufijo __failed.json si querés
-        failed_name = filename.replace(".json", f"__failed.json")
-        shutil.move(str(incoming_path), str(processed_dir / failed_name))
         raise HTTPException(status_code=422, detail=str(ve))
+
     except Exception as e:
-        # error inesperado
-        if incoming_path.exists():
-            incoming_path.unlink()
-        raise HTTPException(status_code=500, detail=f"Error interno: {str(e)}")
+        raise HTTPException(status_code=500, detail="Error interno: " + str(e))

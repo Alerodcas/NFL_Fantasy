@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import { API_BASE } from '../config/server';
 
 export default function CreateSeason() {
   const navigate = useNavigate();
@@ -71,7 +72,7 @@ export default function CreateSeason() {
         weeks: weeks
       };
 
-      await axios.post('http://localhost:8000/api/seasons/', payload, {
+      await axios.post(`${API_BASE}/api/seasons/`, payload, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
