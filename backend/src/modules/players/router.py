@@ -12,6 +12,7 @@ from ...config.database import get_db
 from ..users.router import get_current_user
 from .schemas import Player as PlayerOut, PlayerCreate
 from . import service, validators
+from ..media import repository as media_repo
 
 router = APIRouter()
 
@@ -84,7 +85,15 @@ def create_player_upload(
                 raise HTTPException(status_code=409, detail=error_msg)
             raise HTTPException(status_code=422, detail=error_msg)
 
-        player = service.create_player(db=db, payload=payload, created_by=current_user.id, uploaded_file=image)
+        # Persist the uploaded image using the media repository (persistence layer)
+        try:
+            image_url, thumb_url = media_repo.save_player_upload(image)
+        except Exception as e:
+            raise HTTPException(status_code=500, detail="Error saving uploaded image: " + str(e))
+
+        # Build payload including the saved image URL and create the player
+        validated_payload = PlayerCreate(**{**validated, "image_url": image_url})
+        player = service.create_player(db=db, payload=validated_payload, created_by=current_user.id, thumbnail_url=thumb_url)
         try:
             db.commit()
             db.refresh(player)

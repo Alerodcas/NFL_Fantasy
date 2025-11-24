@@ -17,74 +17,81 @@ def validate_players_batch(db: Session, data: list) -> List[dict]:
 
     errors: List[str] = []
     validated_items: List[dict] = []
-    seen_items: List[dict] = []
+    seen_pairs = set()
+
+    # Cache team lookups to avoid repeated DB calls for the same team name
+    team_cache: Dict[str, Any] = {}
 
     for idx, item in enumerate(data, start=1):
         # Basic shape checks
         item_errors: List[str] = []
 
-        if "name" not in item or not isinstance(item["name"], str) or not item["name"].strip():
+        name_raw = item.get("name")
+        if not isinstance(name_raw, str) or not name_raw.strip():
             item_errors.append(f"Row {idx}: missing field 'name'")
-        name = item.get("name", "").strip()
+            name = ""
+        else:
+            name = name_raw.strip()
 
         pos = item.get("position")
         if not pos or not isinstance(pos, str) or not pos.strip():
             item_errors.append(f"Row {idx}: missing field 'position'")
+            pos_up = ""
         else:
             pos_up = pos.strip().upper()
             if pos_up not in ALLOWED_POSITIONS:
                 allowed = ", ".join(sorted(ALLOWED_POSITIONS))
                 item_errors.append(f"Row {idx}: invalid position '{pos}'. Allowed values: {allowed}")
 
-        if "team" not in item or not isinstance(item.get("team"), str) or not item["team"].strip():
+        team_name_raw = item.get("team")
+        if not isinstance(team_name_raw, str) or not team_name_raw.strip():
             item_errors.append(f"Row {idx}: missing field 'team'")
-        team = item.get("team", "").strip()
+            team_name = ""
+        else:
+            team_name = team_name_raw.strip()
 
-        if "image" not in item or not item["image"]:
+        image = item.get("image")
+        if not image:
             item_errors.append(f"Row {idx}: missing field 'image'")
 
         # Duplicate checks within file
         if not item_errors:
-            for prev in seen_items:
-                if prev["name"].lower() == name.lower() and prev["team"].lower() == team.lower():
-                    item_errors.append(f"Row {idx}: player '{name}' is duplicated inside the file for team '{team}'")
-                    break
-                if item.get("id") and prev.get("id") and item["id"] == prev["id"]:
-                    item_errors.append(f"Row {idx}: ID '{item['id']}' is duplicated inside the file")
-                    break
-
-        # DB validations
-        team_obj = get_by_name_ci(db, team) if team else None
-        team_id = team_obj.id if team_obj else None
-
-        if not item_errors:
-            # Name length
-            if len(name) < 2:
-                item_errors.append(f"Row {idx}: Name must be at least 2 characters.")
-
-            if not team_id:
-                item_errors.append(f"Row {idx}: Team not found.")
-
-            # Uniqueness in DB
-            if team_id:
-                existing = get_by_name_ci_for_team(db, team_id=team_id, name=name)
-                if existing:
-                    item_errors.append(f"Row {idx}: Jugador con ese nombre ya existe en este equipo.")
-
-            if not item.get("image"):
-                item_errors.append(f"Row {idx}: Image is required.")
+            pair_key = (name.lower(), team_name.lower())
+            if pair_key in seen_pairs:
+                item_errors.append(f"Row {idx}: player '{name}' is duplicated inside the file for team '{team_name}'")
+            else:
+                seen_pairs.add(pair_key)
 
         if item_errors:
             errors.extend(item_errors)
             continue
 
-        seen_items.append({"name": name, "team": team, "id": item.get("id")})
-        validated_items.append({
+        # Resolve or cache team object
+        team_obj = None
+        if team_name in team_cache:
+            team_obj = team_cache[team_name]
+        else:
+            team_obj = get_by_name_ci(db, team_name)
+            team_cache[team_name] = team_obj
+
+        # Build payload for single-item validator and reuse it (avoid duplicating validation)
+        payload = {
             "name": name,
             "position": pos_up,
-            "team_id": team_id,
-            "image_url": item.get("image")
-        })
+            "team_id": team_obj.id if team_obj else None,
+            "image_url": image,
+        }
+
+        try:
+            validated = validate_single_player(db=db, payload=payload, uploaded_file=None, team_obj=team_obj)
+        except ValueError as ve:
+            # Prepend row info
+            err_text = str(ve)
+            # Ensure messages are per-row for easier debugging
+            errors.append(f"Row {idx}: {err_text}")
+            continue
+
+        validated_items.append(validated)
 
     if errors:
         raise ValueError("Validation errors:\n" + "\n".join(errors))
@@ -92,7 +99,7 @@ def validate_players_batch(db: Session, data: list) -> List[dict]:
     return validated_items
 
 
-def validate_single_player(db: Session, payload: dict, uploaded_file: Optional[object] = None) -> dict:
+def validate_single_player(db: Session, payload: dict, uploaded_file: Optional[object] = None, team_obj: Optional[Any] = None) -> dict:
     """Validate a single player payload.
 
     payload should contain: name, position, team_id (int) or team (name str), image_url (optional)
@@ -121,12 +128,16 @@ def validate_single_player(db: Session, payload: dict, uploaded_file: Optional[o
     if not team_id:
         errors.append("team_id is required")
     else:
-        # Verify team exists
-        from ..teams.repository import get_by_id as _get_team_by_id
-        team = _get_team_by_id(db, team_id)
-        if not team:
-            errors.append("Team not found.")
+        # Verify team exists (use provided team_obj if available to avoid extra DB lookup)
+        if team_obj is None:
+            from ..teams.repository import get_by_id as _get_team_by_id
+            team = _get_team_by_id(db, team_id)
+            if not team:
+                errors.append("Team not found.")
         else:
+            team = team_obj
+
+        if team:
             # Check uniqueness within the team
             existing = get_by_name_ci_for_team(db, team_id=team_id, name=name)
             if existing:

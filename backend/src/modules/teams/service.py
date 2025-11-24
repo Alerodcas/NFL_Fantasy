@@ -1,6 +1,6 @@
 from typing import Optional, List
 from sqlalchemy.orm import Session
-from ...core.media import try_download_and_thumb, save_upload_file, public_url
+from ...core.media import try_download_and_thumb
 from ...config.paths import PATH_TEAMS
 from . import models, schemas, repository
 import os
@@ -13,7 +13,6 @@ def create_team(
     *,
     payload: schemas.TeamCreate,
     created_by: int,
-    uploaded_file: Optional[object] = None
 ) -> models.Team:
     """
     Business logic for creating a team:
@@ -37,15 +36,10 @@ def create_team(
     if existing:
         raise ValueError("A team with that name already exists.")
     
-    # Handle image
+    # Handle image: router is responsible for persisting uploads and passing `image_url`.
     image_url = None
     thumb_url = None
-    
-    if uploaded_file:
-        # File upload path
-        image_url, thumb_url = _save_team_upload(uploaded_file)
-    elif payload.image_url:
-        # URL-based image
+    if payload.image_url:
         image_url = str(payload.image_url)
         thumb_url = try_download_and_thumb(image_url, subdir=PATH_TEAMS)
     
@@ -111,4 +105,5 @@ def _save_team_upload(upload_file) -> tuple[str, str]:
     Save uploaded file and generate thumbnail.
     Returns (image_url, thumbnail_url).
     """
-    return save_upload_file(upload_file, PATH_TEAMS)
+    # Deprecated: routers should persist uploads via modules.media.repository
+    raise RuntimeError("_save_team_upload is deprecated; persist uploads via modules.media.repository from the router")

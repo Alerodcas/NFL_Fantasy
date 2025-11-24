@@ -9,6 +9,8 @@ from ..users.router import get_current_user
 from .repository import get_by_id
 from .schemas import Team as TeamOut, TeamCreate, TeamUpdate
 from . import service
+from ..media import repository as media_repo
+from ...config.paths import PATH_TEAMS
 
 router = APIRouter()
 
@@ -49,7 +51,15 @@ def create_team_upload(
     
     try:
         payload = TeamCreate(name=name, city=city, image_url=None)
-        team = service.create_team(db=db, payload=payload, created_by=current_user.id, uploaded_file=image)
+        # Persist uploaded image via media repository
+        try:
+            image_url, thumb_url = media_repo.save_upload(image, PATH_TEAMS)
+        except Exception as e:
+            raise HTTPException(status_code=400, detail="Invalid image file: " + str(e))
+
+        # Build payload including saved image URL and delegate creation to service
+        payload = TeamCreate(name=name, city=city, image_url=image_url)
+        team = service.create_team(db=db, payload=payload, created_by=current_user.id)
         return team
     except ValueError as ve:
         error_msg = str(ve)

@@ -19,4 +19,22 @@ api.interceptors.request.use(
   }
 );
 
+// Response interceptor to normalize server-provided error details so components
+// can display `error.response.data.detail` reliably. We attach `serverDetail`
+// to the error object when present.
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    try {
+      const detail = error?.response?.data?.detail ?? error?.response?.data?.message ?? null;
+      if (detail) {
+        error.serverDetail = detail;
+      }
+    } catch (e) {
+      // swallow any parsing error and keep rejecting the original error
+    }
+    return Promise.reject(error);
+  }
+);
+
 export default api;

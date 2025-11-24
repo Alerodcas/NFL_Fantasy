@@ -1,6 +1,6 @@
 from typing import Optional, List, Dict, Any, Tuple
 from sqlalchemy.orm import Session
-from ...core.media import try_download_and_thumb, save_upload_file, save_processed_copy, public_url
+from ...core.media import try_download_and_thumb, save_processed_copy, public_url
 from ...config.paths import PATH_PLAYERS, PATH_PLAYERS_PROCESSED
 from ..teams.repository import get_by_id as get_team_by_id
 from . import models, schemas, repository, validators
@@ -20,7 +20,7 @@ def create_player(
     *,
     payload: schemas.PlayerCreate,
     created_by: int,
-    uploaded_file: Optional[object] = None
+    thumbnail_url: Optional[str] = None
 ) -> models.Player:
 
     name = payload.name.strip()
@@ -29,12 +29,10 @@ def create_player(
 
     # Assumes payload has already been validated by caller/validators.
 
-    # Process image (if provided). Service does not perform validation of payload.
-    if uploaded_file:
-        image_url, thumb_url = _save_player_upload(uploaded_file)
-    else:
-        image_url = payload.image_url
-        thumb_url = try_download_and_thumb(image_url, subdir=PATH_PLAYERS) if image_url else None
+    # Service no longer performs filesystem image persistence.
+    # The caller (router or repository) must provide `payload.image_url` and optionally `thumbnail_url`.
+    image_url = payload.image_url
+    thumb_url = thumbnail_url if thumbnail_url is not None else (try_download_and_thumb(image_url, subdir=PATH_PLAYERS) if image_url else None)
 
     player = models.Player(
         name=name,
@@ -54,8 +52,8 @@ def create_player(
 
 
 def _save_player_upload(upload_file) -> tuple[str, str]:
-    # Delegate actual file saving and thumbnail generation to core.media
-    return save_upload_file(upload_file, PATH_PLAYERS)
+    # Deprecated: persistence moved to `modules.media.repository.save_player_upload`
+    raise RuntimeError("_save_player_upload is deprecated; use modules.media.repository.save_player_upload from router")
 
 
 
