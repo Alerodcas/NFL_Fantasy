@@ -11,6 +11,7 @@ from sqlalchemy.orm import Session
 from ...config.database import get_db
 from ..users.router import get_current_user
 from .schemas import Player as PlayerOut, PlayerCreate
+from .schemas import PlayerNewsCreate, PlayerNewsOut
 from . import service, validators
 from ..media import repository as media_repo
 
@@ -145,3 +146,40 @@ def batch_upload_players(
 
     except Exception as e:
         raise HTTPException(status_code=500, detail="Error interno: " + str(e))
+
+
+
+@router.post("/{player_id}/news", response_model=PlayerNewsOut, status_code=status.HTTP_201_CREATED)
+def create_player_news(
+    player_id: int,
+    payload: PlayerNewsCreate,
+    db: Session = Depends(get_db),
+    current_user = Depends(get_current_user),
+):
+    _require_admin(current_user)
+
+    # Ensure path player_id overrides any body value
+    payload = PlayerNewsCreate(**{**payload.dict(), "player_id": player_id})
+
+    try:
+        news = service.create_player_news(db=db, payload=payload, author_id=current_user.id)
+        try:
+            db.commit()
+            db.refresh(news)
+        except Exception:
+            db.rollback()
+            raise HTTPException(status_code=500, detail="Error saving news")
+
+        return news
+
+    except ValueError as ve:
+        raise HTTPException(status_code=422, detail=str(ve))
+
+
+@router.get("/{player_id}/news", response_model=list[PlayerNewsOut], status_code=200)
+def list_player_news(
+    player_id: int,
+    db: Session = Depends(get_db),
+):
+    news = service.list_news_for_player(db=db, player_id=player_id)
+    return news
