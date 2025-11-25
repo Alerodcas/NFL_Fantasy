@@ -12,7 +12,7 @@ from ...config.database import get_db
 from ..users.router import get_current_user
 from .schemas import Player as PlayerOut, PlayerCreate
 from .schemas import PlayerNewsCreate, PlayerNewsOut
-from . import service, validators
+from . import service, validators, repository
 from ..media import repository as media_repo
 
 router = APIRouter()
@@ -149,6 +149,20 @@ def batch_upload_players(
 
 
 
+@router.get("", response_model=list[PlayerOut])
+def list_players(
+    team_id: Optional[int] = None,
+    db: Session = Depends(get_db),
+):
+    # If team_id provided, return players for that team
+    if team_id is not None:
+        players = repository.list_players_by_team(db=db, team_id=team_id)
+        return players
+    # Otherwise, return empty list (or could later support global list)
+    return []
+
+
+
 @router.post("/{player_id}/news", response_model=PlayerNewsOut, status_code=status.HTTP_201_CREATED)
 def create_player_news(
     player_id: int,
@@ -183,3 +197,15 @@ def list_player_news(
 ):
     news = service.list_news_for_player(db=db, player_id=player_id)
     return news
+
+
+
+@router.get("/{player_id}", response_model=PlayerOut, status_code=200)
+def get_player(
+    player_id: int,
+    db: Session = Depends(get_db),
+):
+    player = repository.get_by_id(db=db, player_id=player_id)
+    if not player:
+        raise HTTPException(status_code=404, detail="Player not found")
+    return player

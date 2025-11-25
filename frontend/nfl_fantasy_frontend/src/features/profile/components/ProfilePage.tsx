@@ -8,6 +8,12 @@ const ProfilePage = () => {
 	const [isLoading, setIsLoading] = useState(true);
 	const [shouldCheckAuth, setShouldCheckAuth] = useState(true);
 
+	// Teams / players quick selector (like admin page)
+	const [teams, setTeams] = useState<any[]>([]);
+	const [players, setPlayers] = useState<any[]>([]);
+	const [selectedTeam, setSelectedTeam] = useState<number | null>(null);
+	const [selectedPlayer, setSelectedPlayer] = useState<number | null>(null);
+
 	useEffect(() => {
 		console.log('ProfilePage - Estado actual del usuario:', user);
 		console.log('ProfilePage - Token en localStorage:', localStorage.getItem('token'));
@@ -31,6 +37,37 @@ const ProfilePage = () => {
 
 		return () => clearTimeout(timer);
 	}, [user, shouldCheckAuth]);
+
+	// load teams for selector
+	useEffect(() => {
+		const loadTeams = async () => {
+			try {
+				const { listTeams } = await import('../../../services/teams');
+				const data = await listTeams();
+				setTeams(data);
+			} catch (err) {
+				console.error('ProfilePage - Failed to load teams for selector', err);
+				setTeams([]);
+			}
+		};
+		loadTeams();
+	}, []);
+
+	// load players when selectedTeam changes
+	useEffect(() => {
+		const loadPlayers = async () => {
+			if (!selectedTeam) return setPlayers([]);
+			try {
+				const { listPlayersByTeam } = await import('../../../services/players');
+				const data = await listPlayersByTeam(selectedTeam);
+				setPlayers(data);
+			} catch (err) {
+				console.error('ProfilePage - Failed to load players for team', err);
+				setPlayers([]);
+			}
+		};
+		loadPlayers();
+	}, [selectedTeam]);
 
 	useEffect(() => {
 		// Solo redirigir si ya terminó de cargar, no hay usuario Y no hay token
@@ -264,6 +301,59 @@ const ProfilePage = () => {
 						</div>
 					</div>
 
+					
+				{/* Quick selector: Team -> Player -> Open profile */}
+				<div style={{
+					padding: '20px',
+					backgroundColor: '#1a202c',
+					borderRadius: '8px',
+					border: '1px solid #4a5568',
+					marginBottom: '10px'
+				}}>
+					<label style={{
+						display: 'block',
+						fontWeight: '600',
+						color: '#a0aec0',
+						marginBottom: '8px',
+						fontSize: '14px',
+						textTransform: 'uppercase',
+						letterSpacing: '0.5px'
+					}}>
+						Abrir perfil de jugador (seleccionar equipo)
+					</label>
+					<div style={{ display: 'flex', gap: 8, marginTop: 8, flexWrap: 'wrap' }}>
+						<select
+							value={selectedTeam ?? ''}
+							onChange={(e) => { const v = e.target.value ? Number(e.target.value) : null; setSelectedTeam(v); setSelectedPlayer(null); }}
+							style={{ padding: 10, borderRadius: 6, minWidth: 220 }}
+						>
+							<option value="">-- Seleccione Equipo --</option>
+							{teams.map((t) => (
+								<option key={t.id} value={t.id}>{t.name}</option>
+							))}
+						</select>
+
+						<select
+							value={selectedPlayer ?? ''}
+							onChange={(e) => setSelectedPlayer(e.target.value ? Number(e.target.value) : null)}
+							style={{ padding: 10, borderRadius: 6, minWidth: 220 }}
+							disabled={!selectedTeam}
+						>
+							<option value="">-- Seleccione Jugador --</option>
+							{players.map((p) => (
+								<option key={p.id} value={p.id}>{p.name}</option>
+							))}
+						</select>
+						<button
+							onClick={() => selectedPlayer && window.location.assign(`/players/${selectedPlayer}`)}
+							style={{ padding: '12px', backgroundColor: '#63b3ed', color: 'white', border: 'none', borderRadius: 6, fontWeight: 600, cursor: 'pointer' }}
+							disabled={!selectedPlayer}
+						>
+							Abrir perfil de jugador
+						</button>
+					</div>
+				</div>
+
 					{user.role && user.role.toLowerCase() === 'admin' && (
 						<button
 							onClick={handleBackToAdmin}
@@ -323,6 +413,7 @@ const ProfilePage = () => {
 						Unirse a Liga
 					</button>
 
+					
 					<button
 						onClick={handleLogout}
 						style={{

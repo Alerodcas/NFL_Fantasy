@@ -36,3 +36,45 @@ export async function createPlayerUpload(payload: { name: string; position: stri
   });
   return res.data;
 }
+
+// Player news types and API
+export type PlayerNews = {
+  id: number;
+  player_id: number;
+  author_id: number;
+  summary: string;
+  text: string;
+  is_injury: boolean;
+  injury_type?: string | null;
+  changes?: Record<string, any> | null;
+  created_at: string;
+};
+
+export type PlayerNewsCreate = {
+  player_id: number;
+  summary: string;
+  text: string;
+  is_injury?: boolean;
+  injury_type?: string | null;
+  changes?: Record<string, any> | null;
+};
+
+export async function getPlayer(playerId: number) {
+  const res = await api.get<Player>(`/players/${playerId}`);
+  return res.data;
+}
+
+export async function getPlayerNews(playerId: number) {
+  const res = await api.get<PlayerNews[]>(`/players/${playerId}/news`);
+  return res.data;
+}
+
+export async function createPlayerNews(playerId: number, payload: PlayerNewsCreate) {
+  const res = await api.post<PlayerNews>(`/players/${playerId}/news`, payload);
+  return res.data;
+}
+
+export async function listPlayersByTeam(teamId: number) {
+  const res = await api.get<Player[]>(`/players`, { params: { team_id: teamId } });
+  return res.data;
+}

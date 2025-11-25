@@ -43,6 +43,12 @@ def create_player(
     return player
 
 
+def list_players_by_team(db: Session, *, team_id: int):
+    from sqlalchemy import select
+    stmt = select(models.Player).where(models.Player.team_id == team_id).order_by(models.Player.name)
+    return db.execute(stmt).scalars().all()
+
+
 def create_news(db: Session, *, news: models.PlayerNews) -> models.PlayerNews:
     """Persist a PlayerNews instance and return it."""
     db.add(news)
