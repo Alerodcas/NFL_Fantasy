@@ -24,3 +24,38 @@ class Player(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+# Player news schemas
+InjuryType = Literal['O', 'D', 'Q', 'P', 'FP', 'IR', 'PUP', 'SUS']
+
+
+class PlayerNewsCreate(BaseModel):
+    player_id: int
+    summary: Annotated[str, Field(min_length=1, max_length=30)]
+    text: Annotated[str, Field(min_length=10, max_length=300)]
+    is_injury: bool = False
+    injury_type: Optional[InjuryType] = None
+
+    @field_validator('injury_type')
+    def check_injury_required(cls, v, info):
+        # If is_injury True then injury_type must be present
+        data = info.data or {}
+        if data.get('is_injury') and v is None:
+            raise ValueError('injury_type is required when is_injury is true')
+        return v
+
+
+class PlayerNewsOut(BaseModel):
+    id: int
+    player_id: int
+    author_id: int
+    summary: str
+    text: str
+    is_injury: bool
+    injury_type: Optional[str]
+    changes: Optional[dict]
+    created_at: datetime
+
+    class Config:
+        from_attributes = True

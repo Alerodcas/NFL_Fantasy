@@ -17,6 +17,10 @@ export default function AdminProfile() {
   const { token } = useAuth();
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [teams, setTeams] = useState<any[]>([]);
+  const [players, setPlayers] = useState<any[]>([]);
+  const [selectedTeam, setSelectedTeam] = useState<number | null>(null);
+  const [selectedPlayer, setSelectedPlayer] = useState<number | null>(null);
 
   useEffect(() => {
     const loadUser = async () => {
@@ -47,8 +51,37 @@ export default function AdminProfile() {
       }
     };
 
+    // load teams for admin quick selector
+    const loadTeams = async () => {
+      try {
+        const { listTeams } = await import('../../services/teams');
+        const data = await listTeams();
+        setTeams(data);
+      } catch (err) {
+        console.error('Failed to load teams for admin selector', err);
+        setTeams([]);
+      }
+    };
+
     loadUser();
+    loadTeams();
   }, [token, navigate]);
+
+  // load players when selectedTeam changes
+  useEffect(() => {
+    const loadPlayers = async () => {
+      if (!selectedTeam) return setPlayers([]);
+      try {
+        const { listPlayersByTeam } = await import('../../services/players');
+        const data = await listPlayersByTeam(selectedTeam);
+        setPlayers(data);
+      } catch (err) {
+        console.error('Failed to load players for team', err);
+        setPlayers([]);
+      }
+    };
+    loadPlayers();
+  }, [selectedTeam]);
 
   if (loading) {
     return (
@@ -153,6 +186,54 @@ export default function AdminProfile() {
           </div>
         </div>
 
+                
+        {/* Select team -> player -> open profile (card like other admin actions) */}
+        <div style={{ marginTop: 20 }}>
+          <div style={{ backgroundColor: '#2d3748', border: '1px solid #4a5568', borderRadius: 12, padding: 20 }}>
+            <h3 style={{ color: '#e2e8f0', fontSize: 18, fontWeight: 600, margin: '0 0 6px 0' }}>Publicar noticia</h3>
+            <p style={{ color: '#a0aec0', fontSize: 14, margin: '0 0 12px 0' }}>Seleccioná un equipo y luego un jugador para abrir su perfil y publicar una noticia.</p>
+
+            <div style={{ display: 'flex', gap: 8, marginBottom: 12, flexWrap: 'wrap' }}>
+              <select
+                value={selectedTeam ?? ''}
+                onChange={(e) => {
+                  const v = e.target.value ? Number(e.target.value) : null;
+                  setSelectedTeam(v);
+                  setSelectedPlayer(null);
+                }}
+                style={{ padding: 10, borderRadius: 6, minWidth: 220 }}
+              >
+                <option value="">-- Seleccione Equipo --</option>
+                {teams.map((t) => (
+                  <option key={t.id} value={t.id}>{t.name}</option>
+                ))}
+              </select>
+
+              <select
+                value={selectedPlayer ?? ''}
+                onChange={(e) => setSelectedPlayer(e.target.value ? Number(e.target.value) : null)}
+                style={{ padding: 10, borderRadius: 6, minWidth: 220 }}
+                disabled={!selectedTeam}
+              >
+                <option value="">-- Seleccione Jugador --</option>
+                {players.map((p) => (
+                  <option key={p.id} value={p.id}>{p.name}</option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <button
+                onClick={() => selectedPlayer && navigate(`/players/${selectedPlayer}`)}
+                style={{ width: '100%', padding: '12px', backgroundColor: '#63b3ed', color: 'white', border: 'none', borderRadius: 6, fontWeight: 600, cursor: 'pointer' }}
+                disabled={!selectedPlayer}
+              >
+                Abrir perfil de jugador
+              </button>
+            </div>
+          </div>
+        </div>
+
         
 
         {/* Admin info */}
@@ -179,6 +260,7 @@ export default function AdminProfile() {
             Ver perfil de usuario normal
           </button>
         </div>
+
       </div>
     </div>
   );

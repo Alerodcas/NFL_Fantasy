@@ -124,3 +124,53 @@ def process_players_batch(db: Session, *, file, created_by: int):
     except Exception as e:
         db.rollback()
         raise ValueError(f"Unexpected error during batch creation: {str(e)}")
+
+
+def create_player_news(db: Session, *, payload: schemas.PlayerNewsCreate, author_id: int) -> models.PlayerNews:
+    """Create a PlayerNews instance (does not commit). Validates player existence and activity."""
+    # Validate DB-level requirements
+    try:
+        validated = validators.validate_player_news(db=db, payload=payload.dict())
+    except ValueError as ve:
+        raise ve
+
+    # Capture previous designation for 'changes' audit
+    player = repository.get_by_id(db=db, player_id=validated['player_id'])
+    prev_designation = None
+    if player is not None:
+        prev_designation = getattr(player, 'visible_designation', None)
+
+    news = models.PlayerNews(
+        player_id=validated['player_id'],
+        author_id=author_id,
+        summary=validated['summary'].strip(),
+        text=validated['text'].strip(),
+        is_injury=validated.get('is_injury', False),
+        injury_type=validated.get('injury_type'),
+        changes=validated.get('changes') or {'prev_designation': prev_designation, 'new_designation': (validated.get('injury_type') if validated.get('is_injury') else None)},
+    )
+
+    # add to session but don't commit here (router will commit)
+    db.add(news)
+
+    # Update player's visible designation & timestamp based on this news
+    try:
+        if player:
+            player_visible = news.injury_type if news.is_injury else None
+            player.visible_designation = player_visible
+            # Use server-side timestamp on commit; also set a client-side timestamp for immediate readback
+            from datetime import datetime
+            player.visible_designation_updated_at = datetime.utcnow()
+    except Exception:
+        # Do not fail creation if we can't update player visible fields; leave unhandled
+        pass
+
+    return news
+
+
+def list_news_for_player(db: Session, *, player_id: int, limit: int = 50):
+    return repository.list_news_for_player(db=db, player_id=player_id, limit=limit)
+
+
+def get_latest_news(db: Session, *, player_id: int):
+    return repository.get_latest_news_for_player(db=db, player_id=player_id)

@@ -156,3 +156,56 @@ def validate_single_player(db: Session, payload: dict, uploaded_file: Optional[o
         "team_id": team_id,
         "image_url": image_url,
     }
+
+
+def validate_player_news(db: Session, payload: dict) -> dict:
+    """Validate payload for creating player news. Ensures player exists and is active.
+
+    Expected keys: player_id, summary, text, is_injury (optional), injury_type (optional)
+    Returns cleaned dict or raises ValueError with messages.
+    """
+    errors: list[str] = []
+
+    player_id = payload.get('player_id')
+    if not player_id:
+        errors.append('player_id is required')
+    else:
+        # Verify player exists and is active
+        from .repository import get_by_id as _get_player_by_id
+        player = _get_player_by_id(db, player_id)
+        if not player:
+            errors.append('Player not found')
+        else:
+            if not getattr(player, 'is_active', False):
+                errors.append('Player is not active')
+
+    summary = (payload.get('summary') or '').strip()
+    if not summary:
+        errors.append('summary is required')
+    elif len(summary) > 30:
+        errors.append('summary must be at most 30 characters')
+
+    text = (payload.get('text') or '').strip()
+    if not text:
+        errors.append('text is required')
+    elif len(text) < 10 or len(text) > 300:
+        errors.append('text must be between 10 and 300 characters')
+
+    is_injury = bool(payload.get('is_injury'))
+    injury_type = payload.get('injury_type')
+    if is_injury and not injury_type:
+        errors.append('injury_type is required when is_injury is true')
+    if injury_type and injury_type not in {'O', 'D', 'Q', 'P', 'FP', 'IR', 'PUP', 'SUS'}:
+        errors.append('invalid injury_type')
+
+    if errors:
+        raise ValueError('Validation errors:\n' + '\n'.join(errors))
+
+    return {
+        'player_id': player_id,
+        'summary': summary,
+        'text': text,
+        'is_injury': is_injury,
+        'injury_type': injury_type,
+        'changes': payload.get('changes') if isinstance(payload.get('changes'), dict) else None,
+    }

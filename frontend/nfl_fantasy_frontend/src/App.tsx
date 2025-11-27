@@ -10,6 +10,7 @@ import AdminProfile from './features/admin/AdminProfile';
 import CreateSeason from './features/seasons/CreateSeason';
 import PlayerForm from './features/players/components/PlayerForm';
 import BatchPlayers from './features/players/components/PlayerBatch';
+import PlayerProfile from './features/players/PlayerProfile';
 import { AuthProvider } from './shared/context/AuthContext';
 import { useAuth } from './shared/hooks/useAuth';
 
@@ -80,6 +81,14 @@ function App() {
             }
           />
           <Route path="/players/batch" element={<BatchPlayers />} />
+          <Route
+            path="/players/:id"
+            element={
+              <PrivateRoute>
+                <PlayerProfile />
+              </PrivateRoute>
+            }
+          />
           <Route path="*" element={<Navigate to="/login" />} />
         </Routes>
       </Router>
