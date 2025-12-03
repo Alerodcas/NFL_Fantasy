@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field, HttpUrl
+from pydantic import BaseModel, Field
 from typing import Annotated, Optional
 from datetime import datetime
 
@@ -7,13 +7,16 @@ from datetime import datetime
 class TeamCreate(BaseModel):
     name: Annotated[str, Field(min_length=2, max_length=128)]
     city: Annotated[str, Field(min_length=2, max_length=128)]
-    image_url: Optional[HttpUrl] = None  # if provided, we can store it and try to thumbnail it later
+    # Accept either an absolute URL or a relative path (e.g. '/media/...') produced
+    # by the server when saving uploads. Using `str` avoids Pydantic's strict
+    # HttpUrl validation which rejects relative paths.
+    image_url: Optional[str] = None
 
 # Partial update
 class TeamUpdate(BaseModel):
     name: Annotated[str, Field(min_length=2, max_length=128)] | None = None
     city: Annotated[str, Field(min_length=2, max_length=128)] | None = None
-    image_url: Optional[HttpUrl] = None
+    image_url: Optional[str] = None
     is_active: Optional[bool] = None
 
 # Response model

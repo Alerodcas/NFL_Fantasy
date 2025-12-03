@@ -36,6 +36,7 @@ class PlayerNewsCreate(BaseModel):
     text: Annotated[str, Field(min_length=10, max_length=300)]
     is_injury: bool = False
     injury_type: Optional[InjuryType] = None
+    update_state: bool = False
 
     @field_validator('injury_type')
     def check_injury_required(cls, v, info):

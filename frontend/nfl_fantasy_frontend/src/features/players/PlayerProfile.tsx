@@ -102,8 +102,9 @@ export default function PlayerProfile() {
               <h4 style={{ color: '#e2e8f0', marginTop: 0 }}>Estado</h4>
               {player ? (
                 (() => {
-                  // Prefer the latest news to determine visible status
-                  const latest = news && news.length > 0 ? news[0] : null;
+                  // Prefer the most recent news that actually updated player state
+                  // (service will populate `changes` only when `update_state` was true)
+                  const latest = news && news.length > 0 ? news.find((n: any) => n.changes) ?? null : null;
                   const isActive = !!player.is_active;
 
                   const INJURY_LABELS: Record<string, string> = {

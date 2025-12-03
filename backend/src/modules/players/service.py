@@ -147,15 +147,17 @@ def create_player_news(db: Session, *, payload: schemas.PlayerNewsCreate, author
         text=validated['text'].strip(),
         is_injury=validated.get('is_injury', False),
         injury_type=validated.get('injury_type'),
-        changes=validated.get('changes') or {'prev_designation': prev_designation, 'new_designation': (validated.get('injury_type') if validated.get('is_injury') else None)},
+        changes=(validated.get('changes') if validated.get('changes') is not None else (
+            {'prev_designation': prev_designation, 'new_designation': (validated.get('injury_type') if validated.get('is_injury') else None)} if validated.get('update_state') else None
+        )),
     )
 
     # add to session but don't commit here (router will commit)
     db.add(news)
 
-    # Update player's visible designation & timestamp based on this news
+    # Update player's visible designation & timestamp based on this news only if requested
     try:
-        if player:
+        if player and validated.get('update_state'):
             player_visible = news.injury_type if news.is_injury else None
             player.visible_designation = player_visible
             # Use server-side timestamp on commit; also set a client-side timestamp for immediate readback

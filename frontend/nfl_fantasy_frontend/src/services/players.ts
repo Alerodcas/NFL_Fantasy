@@ -57,6 +57,7 @@ export type PlayerNewsCreate = {
   is_injury?: boolean;
   injury_type?: string | null;
   changes?: Record<string, any> | null;
+  update_state?: boolean;
 };
 
 export async function getPlayer(playerId: number) {

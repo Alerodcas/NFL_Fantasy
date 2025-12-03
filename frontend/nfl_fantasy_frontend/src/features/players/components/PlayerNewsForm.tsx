@@ -21,6 +21,7 @@ export default function PlayerNewsForm({ playerId, onCreated }: Props) {
   const [summary, setSummary] = useState('');
   const [text, setText] = useState('');
   const [isInjury, setIsInjury] = useState(false);
+  const [updateState, setUpdateState] = useState(false);
   const [injuryType, setInjuryType] = useState<string | undefined>(undefined);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -51,11 +52,13 @@ export default function PlayerNewsForm({ playerId, onCreated }: Props) {
         text: text.trim(),
         is_injury: isInjury,
         injury_type: isInjury ? injuryType : undefined,
+        update_state: updateState,
       };
       const created = await createPlayerNews(playerId, payload);
       setSummary('');
       setText('');
       setIsInjury(false);
+        setUpdateState(false);
       setInjuryType(undefined);
       if (onCreated) onCreated(created.id);
     } catch (err: any) {
@@ -77,9 +80,12 @@ export default function PlayerNewsForm({ playerId, onCreated }: Props) {
         <label style={{ color: '#a0aec0', display: 'block', marginBottom: 6 }}>Texto</label>
         <textarea value={text} onChange={(e) => setText(e.target.value)} rows={4} maxLength={300} style={{ width: '95%', padding: 8, borderRadius: 6 }} />
       </div>
-      <div style={{ display: 'flex', gap: 12, alignItems: 'center', marginBottom: 10 }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 8, alignItems: 'flex-start', marginBottom: 10 }}>
         <label style={{ color: '#a0aec0' }}>
           <input type="checkbox" checked={isInjury} onChange={(e) => setIsInjury(e.target.checked)} /> <span style={{ marginLeft: 6 }}>Es lesión</span>
+        </label>
+        <label style={{ color: '#a0aec0' }}>
+          <input type="checkbox" checked={updateState} onChange={(e) => setUpdateState(e.target.checked)} /> <span style={{ marginLeft: 6 }}>Actualizar estado del jugador</span>
         </label>
         {isInjury && (
           <select value={injuryType} onChange={(e) => setInjuryType(e.target.value)} style={{ padding: 8, borderRadius: 6 }}>
