@@ -58,7 +58,7 @@ export default function PlayerNewsForm({ playerId, onCreated }: Props) {
       setSummary('');
       setText('');
       setIsInjury(false);
-        setUpdateState(false);
+      setUpdateState(false);
       setInjuryType(undefined);
       if (onCreated) onCreated(created.id);
     } catch (err: any) {
