@@ -39,9 +39,7 @@ export async function createTeamUpload(payload: { name: string; city: string; fi
   form.append("name", payload.name);
   form.append("city", payload.city);
   form.append("image", payload.file);
-  const res = await api.post<Team>("/teams/upload", form, {
-    headers: { "Content-Type": "multipart/form-data" },
-  });
+  const res = await api.post<Team>("/teams/upload", form);
   return res.data;
 }
 

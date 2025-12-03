@@ -198,6 +198,8 @@ def validate_player_news(db: Session, payload: dict) -> dict:
     if injury_type and injury_type not in {'O', 'D', 'Q', 'P', 'FP', 'IR', 'PUP', 'SUS'}:
         errors.append('invalid injury_type')
 
+    update_state = bool(payload.get('update_state'))
+
     if errors:
         raise ValueError('Validation errors:\n' + '\n'.join(errors))
 
@@ -208,4 +210,5 @@ def validate_player_news(db: Session, payload: dict) -> dict:
         'is_injury': is_injury,
         'injury_type': injury_type,
         'changes': payload.get('changes') if isinstance(payload.get('changes'), dict) else None,
+        'update_state': update_state,
     }

@@ -67,10 +67,11 @@ export default function CreateTeam() {
       setSuccess("Equipo creado exitosamente. Redirigiendo al panel de administración…");
       setTimeout(() => nav("/admin"), 1300);
     } catch (e: any) {
+      console.error('createTeamUpload error', e, e?.response?.data, e?.serverDetail);
       const status = e?.response?.status;
       if (status === 409) setError("Ya existe un equipo con ese nombre.");
-      else if (status === 422) setError("Revisa los campos requeridos.");
-      else setError(e?.message || "No se pudo crear el equipo.");
+      else if (status === 422) setError(e?.serverDetail || "Revisa los campos requeridos.");
+      else setError(e?.serverDetail || e?.message || "No se pudo crear el equipo.");
     } finally {
       setSubmitting(false);
     }
