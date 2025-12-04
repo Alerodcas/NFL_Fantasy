@@ -12,3 +12,4 @@ Pillow
 werkzeug
 pytest
 pytest-cov
+httpx

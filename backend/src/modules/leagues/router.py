@@ -74,7 +74,7 @@ def create_league(
 def search_leagues(
     name: str | None = None,
     season_id: int | None = None,
-    status: str | None = None,
+    status_: str | None = None,
     db: Session = Depends(get_db),
     current_user = Depends(get_current_user),
 ):
@@ -85,7 +85,7 @@ def search_leagues(
     - Si se usa name, debe tener al menos 3 caracteres (case-insensitive)
     """
     # Evitar la enumeración de ligas sin un término de búsqueda explícito
-    if not any([name, season_id, status]):
+    if not any([name, season_id, status_]):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Debe proporcionar al menos un criterio de búsqueda (name, season_id o status)."
@@ -103,7 +103,7 @@ def search_leagues(
     filters = schemas.LeagueSearchFilters(
         name=name,
         season_id=season_id,
-        status=status
+        status=status_
     )
 
     results = svc_search_leagues(db=db, filters=filters)

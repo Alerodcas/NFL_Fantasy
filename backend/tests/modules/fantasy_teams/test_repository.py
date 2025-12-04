@@ -1,7 +1,7 @@
 import sys
 from pathlib import Path
 
-# Ensure `backend/src` is on sys.path before importing application packages
+# Se asegura de que `backend/src` este en sys.path antes de importar paquetes de la aplicacion
 ROOT = Path(__file__).resolve().parents[3]
 SRC_PATH = str(ROOT / "src")
 if SRC_PATH not in sys.path:
