@@ -79,6 +79,15 @@ def process_players_batch(db: Session, *, file, created_by: int):
             text_content = raw_content
         data = json.loads(text_content)
     except Exception:
+        # Save a rejected copy if we could read some content
+        try:
+            if 'raw_content' in locals():
+                try:
+                    save_processed_copy(raw_content, PATH_PLAYERS_PROCESSED, prefix="rejected")
+                except Exception:
+                    pass
+        except Exception:
+            pass
         raise ValueError("Malformed JSON or unreadable file")
 
     # Debe ser un array
@@ -91,39 +100,39 @@ def process_players_batch(db: Session, *, file, created_by: int):
     seen_items = []
 
     # Delegate all validation to validators.validate_players_batch
-    validated_items = validators.validate_players_batch(db=db, data=data)
-
-
-
-    # Crear todos los jugadores en una sola transacción
+    # If validation fails, save a rejected copy of the upload for audit and debugging.
     try:
-        for item in validated_items:
-            payload = schemas.PlayerCreate(**item)
-
-            player = create_player(
-                db,
-                payload=payload,
-                created_by=created_by
-            )
-            created.append(player.name)
-
-        db.commit()
-
-        # Save a timestamped copy of the processed file via core.media
+        validated_items = validators.validate_players_batch(db=db, data=data)
+    except ValueError as ve:
         try:
-            save_processed_copy(raw_content, PATH_PLAYERS_PROCESSED, prefix="batch")
+            save_processed_copy(text_content if isinstance(text_content, (str, bytes)) else str(text_content), PATH_PLAYERS_PROCESSED, prefix="rejected")
         except Exception:
-            # Do not fail the operation if saving the copy fails
             pass
+        # Re-raise so caller/router can handle rollback and response
+        raise
 
-        return {"created": created}
 
-    except (IntegrityError, ValueError) as e:
-        db.rollback()
-        raise ValueError(f"Error creating players: {str(e)}")
-    except Exception as e:
-        db.rollback()
-        raise ValueError(f"Unexpected error during batch creation: {str(e)}")
+
+    # Create players in the current DB session. Persistence (commit/rollback)
+    # responsibilities are delegated to the caller (router / storage layer).
+    for item in validated_items:
+        payload = schemas.PlayerCreate(**item)
+
+        player = create_player(
+            db,
+            payload=payload,
+            created_by=created_by
+        )
+        created.append(player.name)
+
+    # Save a timestamped copy of the processed file via core.media (best-effort)
+    try:
+        save_processed_copy(raw_content, PATH_PLAYERS_PROCESSED, prefix="approved")
+    except Exception:
+        # Do not fail the operation if saving the copy fails
+        pass
+
+    return {"created": created}
 
 
 def create_player_news(db: Session, *, payload: schemas.PlayerNewsCreate, author_id: int) -> models.PlayerNews:

@@ -9,6 +9,7 @@ import shutil
 from sqlalchemy.orm import Session
 
 from ...config.database import get_db
+from ...core.storage import commit, commit_and_refresh, rollback
 from ..users.router import get_current_user
 from .schemas import Player as PlayerOut, PlayerCreate
 from .schemas import PlayerNewsCreate, PlayerNewsOut
@@ -44,14 +45,12 @@ def create_player_json(
         raise HTTPException(status_code=422, detail=error_msg)
 
     try:
-        # Build validated payload and create
+        # Build validated payload and create (service will not commit)
         validated_payload = PlayerCreate(**validated)
         player = service.create_player(db=db, payload=validated_payload, created_by=current_user.id)
         try:
-            db.commit()
-            db.refresh(player)
+            commit_and_refresh(db, player)
         except Exception:
-            db.rollback()
             raise HTTPException(status_code=500, detail="Error saving player")
 
         return player
@@ -92,14 +91,12 @@ def create_player_upload(
         except Exception as e:
             raise HTTPException(status_code=500, detail="Error saving uploaded image: " + str(e))
 
-        # Build payload including the saved image URL and create the player
+        # Build payload including the saved image URL and create the player (service will not commit)
         validated_payload = PlayerCreate(**{**validated, "image_url": image_url})
         player = service.create_player(db=db, payload=validated_payload, created_by=current_user.id, thumbnail_url=thumb_url)
         try:
-            db.commit()
-            db.refresh(player)
+            commit_and_refresh(db, player)
         except Exception:
-            db.rollback()
             raise HTTPException(status_code=500, detail="Error saving player")
 
         return player
@@ -133,18 +130,33 @@ def batch_upload_players(
     try:
         result = service.process_players_batch(
             db=db,
-            file=file.file,           
+            file=file.file,
             created_by=current_user.id
         )
+        try:
+            # commit what the service added
+            commit(db)
+        except Exception:
+            raise HTTPException(status_code=500, detail="Error saving players")
+
         return {
             "message": f"{len(result['created'])} jugadores creados correctamente.",
             "created": result["created"],
         }
 
     except ValueError as ve:
+        # Any validation errors -> ensure rollback and return 422
+        try:
+            rollback(db)
+        except Exception:
+            pass
         raise HTTPException(status_code=422, detail=str(ve))
 
     except Exception as e:
+        try:
+            rollback(db)
+        except Exception:
+            pass
         raise HTTPException(status_code=500, detail="Error interno: " + str(e))
 
 
@@ -178,15 +190,17 @@ def create_player_news(
     try:
         news = service.create_player_news(db=db, payload=payload, author_id=current_user.id)
         try:
-            db.commit()
-            db.refresh(news)
+            commit_and_refresh(db, news)
         except Exception:
-            db.rollback()
             raise HTTPException(status_code=500, detail="Error saving news")
 
         return news
 
     except ValueError as ve:
+        try:
+            rollback(db)
+        except Exception:
+            pass
         raise HTTPException(status_code=422, detail=str(ve))
 
 
