@@ -8,8 +8,8 @@ import json
 import shutil
 from sqlalchemy.orm import Session
 
-from ...config.database import get_db
-from ...core.storage import commit, commit_and_refresh, rollback
+from config.database import get_db
+from core.storage import commit, commit_and_refresh, rollback
 from ..users.router import get_current_user
 from .schemas import Player as PlayerOut, PlayerCreate
 from .schemas import PlayerNewsCreate, PlayerNewsOut

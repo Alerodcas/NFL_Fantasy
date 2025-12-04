@@ -1,7 +1,7 @@
 from typing import Optional, List
 from sqlalchemy.orm import Session
-from ...core.media import try_download_and_thumb
-from ...config.paths import PATH_TEAMS
+from core.media import try_download_and_thumb
+from config.paths import PATH_TEAMS
 from . import models, schemas, repository
 import os
 import uuid

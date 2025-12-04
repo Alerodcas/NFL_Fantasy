@@ -5,12 +5,12 @@ from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.staticfiles import StaticFiles
 
-from .config.database import engine
-from .modules.users import models as user_models
-from .modules.teams import models as team_models
-from .modules.fantasy_teams import models as fantasy_team_models
-from .modules.players import models as player_models
-from .modules.leagues.router import router as leagues_router
+from config.database import engine
+from modules.users import models as user_models
+from modules.teams import models as team_models
+from modules.fantasy_teams import models as fantasy_team_models
+from modules.players import models as player_models
+from modules.leagues.router import router as leagues_router
 
 
 # Create tables
@@ -41,11 +41,11 @@ app.mount("/media", StaticFiles(directory=str(MEDIA_DIR)), name="media")
 
 # Routers
 
-from .modules.users.router import router as users_router
-from .modules.teams.router import router as teams_router
+from modules.users.router import router as users_router
+from modules.teams.router import router as teams_router
 # Fantasy teams will be wired via league flows; expose router later if needed
-from .modules.leagues.routes.season_routes import router as season_router
-from .modules.players.router import router as players_router
+from modules.leagues.routes.season_routes import router as season_router
+from modules.players.router import router as players_router
 
 app.include_router(users_router, tags=["users"])
 app.include_router(teams_router, prefix="/teams", tags=["teams"])

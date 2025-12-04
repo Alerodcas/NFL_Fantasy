@@ -1,7 +1,7 @@
 from typing import Optional
 from sqlalchemy.orm import Session
 from datetime import datetime, timedelta
-from ...config import auth as security
+from config import auth as security
 from . import models, schemas, repository
 
 

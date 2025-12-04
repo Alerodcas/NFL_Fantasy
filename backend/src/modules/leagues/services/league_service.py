@@ -1,9 +1,9 @@
 from sqlalchemy.orm import Session
 from sqlalchemy import select, func
-from ....config import auth as security
-from ....core.media import try_download_and_thumb
-from ...fantasy_teams import repository as ftrepo
-from ...fantasy_teams import models as ft_models
+from config import auth as security
+from core.media import try_download_and_thumb
+from modules.fantasy_teams import repository as ftrepo
+from modules.fantasy_teams import models as ft_models
 from .. import models, schemas
 
 # Default roster & scoring pulled from the user story

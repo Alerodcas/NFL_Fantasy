@@ -1,12 +1,12 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Request, UploadFile, File
 from sqlalchemy.orm import Session
 
-from ...config.database import get_db
-from ...core import audit
+from config.database import get_db
+from core import audit
 from ..users.router import get_current_user
 from . import schemas
 from .services.league_service import create_league_with_commissioner_team, search_leagues as svc_search_leagues, join_league as svc_join_league
-from ...config.paths import PATH_FANTASY_TEAMS
+from config.paths import PATH_FANTASY_TEAMS
 from ..media import repository as media_repo
 
 router = APIRouter(prefix="/leagues", tags=["leagues"])

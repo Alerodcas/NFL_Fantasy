@@ -1,8 +1,8 @@
 from sqlalchemy import Column, Integer, String, Boolean, DateTime, Date, func, ForeignKey
-from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.sql import text
 from sqlalchemy.orm import relationship
-from ...config.database import Base
+from config.database import Base
+from sqlalchemy import JSON as JSON_TYPE, String as _String
 
 class Season(Base):
     __tablename__ = "seasons"
@@ -15,7 +15,7 @@ class Season(Base):
     is_current = Column(Boolean, nullable=False, server_default=text("FALSE"))
     created_by = Column(Integer, ForeignKey("users.id", ondelete="RESTRICT"), nullable=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
-    cached_weeks = Column(JSONB, nullable=False, server_default=text("'[]'::jsonb"))
+    cached_weeks = Column(JSON_TYPE, nullable=False, server_default=text("'[]'"))
     
     weeks = relationship("Week", back_populates="season", cascade="all, delete-orphan")
     leagues = relationship("League", back_populates="season")
@@ -34,7 +34,7 @@ class Week(Base):
 class League(Base):
     __tablename__ = "leagues"
     id = Column(Integer, primary_key=True)
-    uuid = Column(UUID(as_uuid=True), server_default=text("gen_random_uuid()"))
+    uuid = Column(_String(36), nullable=True)
     name = Column(String(100), nullable=False, unique=True)
     description = Column(String(1000))
     max_teams = Column(Integer, nullable=False)
@@ -47,8 +47,8 @@ class League(Base):
     trade_deadline = Column(DateTime(timezone=True))
     max_trades_per_team = Column(Integer)
     max_free_agents_per_team = Column(Integer)
-    roster_schema = Column(JSONB, nullable=False)
-    scoring_schema = Column(JSONB, nullable=False)
+    roster_schema = Column(JSON_TYPE, nullable=False)
+    scoring_schema = Column(JSON_TYPE, nullable=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     
     season = relationship("Season", back_populates="leagues")
