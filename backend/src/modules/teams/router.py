@@ -1,16 +1,17 @@
+
 from typing import Optional, List
 
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form
 from fastapi import status
 from sqlalchemy.orm import Session
 
-from ...config.database import get_db
+from config.database import get_db
 from ..users.router import get_current_user
 from .repository import get_by_id
 from .schemas import Team as TeamOut, TeamCreate, TeamUpdate
 from . import service
 from ..media import repository as media_repo
-from ...config.paths import PATH_TEAMS
+from config.paths import PATH_TEAMS
 
 router = APIRouter()
 

@@ -18,6 +18,7 @@ pip install -r requirements.txt
 2. **Run the backend server**
 
 ```powershell
+$env:PYTHONPATH = "$PWD\\src"
 uvicorn src.main:app --reload --host localhost
 ```
 

@@ -1,10 +1,11 @@
 from sqlalchemy import Column, Integer, BigInteger, String, Boolean, DateTime, func, ForeignKey
-from ...config.database import Base
+from config.database import Base
 
 class FantasyTeam(Base):
     __tablename__ = "fantasy_teams"
 
-    id = Column(BigInteger, primary_key=True, index=True)
+    # Use Integer for primary key so SQLite will autoincrement correctly in tests
+    id = Column(Integer, primary_key=True, index=True)
     name = Column(String(128), nullable=False)
     image_url = Column(String(512), nullable=True)
     thumbnail_url = Column(String(512), nullable=True)

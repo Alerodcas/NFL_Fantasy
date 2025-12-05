@@ -1,9 +1,9 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from typing import List
-from ....config.database import get_db
-from ...users.router import get_current_user
-from ...users.models import User
+from config.database import get_db
+from modules.users.router import get_current_user
+from modules.users.models import User
 from ..schemas import SeasonCreate, SeasonUpdate, SeasonResponse
 from ..services.season_service import SeasonService
 

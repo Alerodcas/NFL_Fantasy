@@ -5,9 +5,9 @@ from sqlalchemy.orm import Session
 from jose import jwt
 from datetime import timedelta, datetime
 
-from ...config.database import get_db
-from ...config import auth as security
-from ...core import audit
+from config.database import get_db
+from config import auth as security
+from core import audit
 from . import repository as crud, models, schemas, service
 
 router = APIRouter()

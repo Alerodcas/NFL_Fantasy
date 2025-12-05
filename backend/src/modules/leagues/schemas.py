@@ -1,6 +1,6 @@
 from pydantic import BaseModel, Field, field_validator, validator, model_validator, ConfigDict
 from typing import Optional, Literal, List
-from ...core.validators import validate_password
+from core.validators import validate_password
 from datetime import date, datetime
 
 _ALLOWED_TEAM_SIZES = {4, 6, 8, 10, 12, 14, 16, 18, 20}

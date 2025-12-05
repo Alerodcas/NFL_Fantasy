@@ -1,6 +1,6 @@
 from pydantic import BaseModel, EmailStr, Field, field_validator
 from typing import Annotated
-from ...core.validators import validate_password
+from core.validators import validate_password
 
 # Esquema para la creación de un usuario
 class UserCreate(BaseModel):

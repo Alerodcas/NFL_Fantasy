@@ -1,7 +1,7 @@
 from typing import Optional, List, Dict, Any, Tuple
 from sqlalchemy.orm import Session
-from ...core.media import try_download_and_thumb, save_processed_copy, public_url
-from ...config.paths import PATH_PLAYERS, PATH_PLAYERS_PROCESSED
+from core.media import try_download_and_thumb, save_processed_copy, public_url
+from config.paths import PATH_PLAYERS, PATH_PLAYERS_PROCESSED
 from ..teams.repository import get_by_id as get_team_by_id
 from . import models, schemas, repository, validators
 import os

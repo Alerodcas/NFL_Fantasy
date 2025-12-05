@@ -1,6 +1,6 @@
 from typing import Tuple
-from ...core.media import save_upload_file
-from ...config.paths import PATH_PLAYERS
+from core.media import save_upload_file
+from config.paths import PATH_PLAYERS
 
 
 def save_upload(upload_file, subdir: str) -> Tuple[str, str]:
