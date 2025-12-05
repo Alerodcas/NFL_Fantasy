@@ -1,8 +1,39 @@
 import pytest
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
 from datetime import datetime, timedelta, timezone
 
 from modules.players import repository as repo
 from helpers.factories import create_user, create_team
+from modules.leagues import models as league_models
+from modules.fantasy_teams import models as fantasy_team_models
+from config.database import Base
+
+
+@pytest.fixture
+def db_session():
+    engine = create_engine("sqlite:///:memory:", echo=False)
+    TestingSessionLocal = sessionmaker(bind=engine)
+
+    # Importar modelos relacionados para que metadata incluya las tablas requeridas
+    _ = (
+        user_models.User,
+        team_models.Team,
+        league_models.League,
+        league_models.LeagueMember,
+        fantasy_team_models.FantasyTeam,
+        player_models.Player,
+        player_models.PlayerNews,
+    )
+
+    Base.metadata.create_all(bind=engine)
+
+    session = TestingSessionLocal()
+    yield session
+    session.close()
+
+
+# Usar factories centralizadas
 
 
 def test_create_and_get_player(db_session):
