@@ -6,6 +6,7 @@ from datetime import datetime, timedelta
 from modules.players import repository as repo, models as player_models
 from modules.users import models as user_models
 from modules.teams import models as team_models
+from helpers.factories import create_user, create_team
 from modules.leagues import models as league_models
 from modules.fantasy_teams import models as fantasy_team_models
 from config.database import Base
@@ -34,25 +35,12 @@ def db_session():
     session.close()
 
 
-def _create_user(session, email="u@example.com"):
-    u = user_models.User(name="U", email=email, alias="u", hashed_password="x")
-    session.add(u)
-    session.commit()
-    session.refresh(u)
-    return u
-
-
-def _create_team(session, created_by):
-    t = team_models.Team(name="TeamX", city="City", created_by=created_by)
-    session.add(t)
-    session.commit()
-    session.refresh(t)
-    return t
+# Use centralized factories
 
 
 def test_create_and_get_player(db_session):
-    user = _create_user(db_session)
-    team = _create_team(db_session, created_by=user.id)
+    user = create_user(db_session)
+    team = create_team(db_session, created_by=user.id)
 
     p = repo.create_player(
         db_session,
@@ -72,8 +60,8 @@ def test_create_and_get_player(db_session):
 
 
 def test_get_by_name_ci_for_team_and_list(db_session):
-    user = _create_user(db_session, email="a@example.com")
-    team = _create_team(db_session, created_by=user.id)
+    user = create_user(db_session, email="a@example.com")
+    team = create_team(db_session, created_by=user.id)
 
     repo.create_player(db_session, name="Alice", position="WR", image_url=None, thumbnail_url=None, created_by=user.id, team_id=team.id)
     repo.create_player(db_session, name="bob", position="RB", image_url=None, thumbnail_url=None, created_by=user.id, team_id=team.id)
@@ -89,8 +77,8 @@ def test_get_by_name_ci_for_team_and_list(db_session):
 
 
 def test_news_crud_and_latest(db_session):
-    user = _create_user(db_session, email="n@example.com")
-    team = _create_team(db_session, created_by=user.id)
+    user = create_user(db_session, email="n@example.com")
+    team = create_team(db_session, created_by=user.id)
 
     player = repo.create_player(db_session, name="NewsPlayer", position="RB", image_url=None, thumbnail_url=None, created_by=user.id, team_id=team.id)
 
