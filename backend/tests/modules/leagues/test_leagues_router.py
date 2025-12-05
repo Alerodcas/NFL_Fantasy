@@ -1,13 +1,5 @@
-import sys
-from pathlib import Path
 from types import SimpleNamespace
 from datetime import datetime
-
-# Ensure `backend/src` is on sys.path before importing application packages
-ROOT = Path(__file__).resolve().parents[3]
-SRC_PATH = str(ROOT / "src")
-if SRC_PATH not in sys.path:
-    sys.path.insert(0, SRC_PATH)
 
 from fastapi import FastAPI
 from fastapi.testclient import TestClient

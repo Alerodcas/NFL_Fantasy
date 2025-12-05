@@ -9,10 +9,12 @@ def get_by_id(db: Session, player_id: int) -> Optional[models.Player]:
 
 
 def get_by_name_ci_for_team(db: Session, *, team_id: int, name: str) -> Optional[models.Player]:
+    # Normalize search term (trim spaces and lowercase) for resilient case-insensitive matching
+    name_clean = name.strip().lower()
     return db.execute(
         select(models.Player).where(
             models.Player.team_id == team_id,
-            func.lower(models.Player.name) == func.lower(name)
+            func.lower(models.Player.name) == name_clean
         )
     ).scalar_one_or_none()
 

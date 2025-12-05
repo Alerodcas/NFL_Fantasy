@@ -1,12 +1,3 @@
-import sys
-from pathlib import Path
-
-# Se asegura de que `backend/src` este en sys.path antes de importar paquetes de la aplicacion
-ROOT = Path(__file__).resolve().parents[3]
-SRC_PATH = str(ROOT / "src")
-if SRC_PATH not in sys.path:
-    sys.path.insert(0, SRC_PATH)
-
 import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
@@ -99,3 +90,5 @@ def test_create_fantasy_team(db_session):
     # Verificar que sí quedó en la DB
     saved = db_session.get(models.FantasyTeam, team.id)
     assert saved is not None
+
+
