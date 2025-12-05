@@ -1,9 +1,16 @@
 from pathlib import Path
+import sys
 from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.staticfiles import StaticFiles
+
+# Ensure `backend/src` is on sys.path so imports like `config` and `modules`
+# (which are top-level in tests) work when running via `uvicorn src.main:app`.
+SRC_PATH = str(Path(__file__).resolve().parent)
+if SRC_PATH not in sys.path:
+    sys.path.insert(0, SRC_PATH)
 
 from config.database import engine
 from modules.users import models as user_models

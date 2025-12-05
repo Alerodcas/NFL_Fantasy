@@ -2,7 +2,12 @@ from sqlalchemy import Column, Integer, String, Boolean, DateTime, Date, func, F
 from sqlalchemy.sql import text
 from sqlalchemy.orm import relationship
 from config.database import Base
-from sqlalchemy import JSON as JSON_TYPE, String as _String
+# Use SQLAlchemy's portable JSON type which works with SQLite and maps to
+# native JSON/JSONB on PostgreSQL. For UUID, use a string fallback to keep
+# tests DB-agnostic (Postgres can still use a migration to switch to real UUID).
+from sqlalchemy import JSON as JSON_TYPE
+from sqlalchemy import String as _String
+uuid_col_type = _String(36)
 
 class Season(Base):
     __tablename__ = "seasons"
@@ -15,7 +20,8 @@ class Season(Base):
     is_current = Column(Boolean, nullable=False, server_default=text("FALSE"))
     created_by = Column(Integer, ForeignKey("users.id", ondelete="RESTRICT"), nullable=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
-    cached_weeks = Column(JSON_TYPE, nullable=False, server_default=text("'[]'"))
+    # Use a Python-level default for SQLite compatibility instead of a DB server_default
+    cached_weeks = Column(JSON_TYPE, nullable=False, default=list)
     
     weeks = relationship("Week", back_populates="season", cascade="all, delete-orphan")
     leagues = relationship("League", back_populates="season")
@@ -34,7 +40,8 @@ class Week(Base):
 class League(Base):
     __tablename__ = "leagues"
     id = Column(Integer, primary_key=True)
-    uuid = Column(_String(36), nullable=True)
+    # UUID stored as string for portability in tests
+    uuid = Column(uuid_col_type, nullable=True)
     name = Column(String(100), nullable=False, unique=True)
     description = Column(String(1000))
     max_teams = Column(Integer, nullable=False)

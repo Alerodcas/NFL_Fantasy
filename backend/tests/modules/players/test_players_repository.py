@@ -1,7 +1,7 @@
 import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 from modules.players import repository as repo, models as player_models
 from modules.users import models as user_models
@@ -17,7 +17,7 @@ def db_session():
     engine = create_engine("sqlite:///:memory:", echo=False)
     TestingSessionLocal = sessionmaker(bind=engine)
 
-    # Import related models so metadata includes required tables
+    # Importar modelos relacionados para que metadata incluya las tablas requeridas
     _ = (
         user_models.User,
         team_models.Team,
@@ -35,7 +35,7 @@ def db_session():
     session.close()
 
 
-# Use centralized factories
+# Usar factories centralizadas
 
 
 def test_create_and_get_player(db_session):
@@ -72,7 +72,7 @@ def test_get_by_name_ci_for_team_and_list(db_session):
     assert found.name.lower() == "alice"
 
     players = repo.list_players_by_team(db_session, team_id=team.id)
-    # Should be ordered by name (Alice, bob, charlie)
+    # Debe estar ordenado por nombre (Alice, bob, charlie)
     assert [p.name.lower() for p in players] == ["alice", "bob", "charlie"]
 
 
@@ -82,7 +82,7 @@ def test_news_crud_and_latest(db_session):
 
     player = repo.create_player(db_session, name="NewsPlayer", position="RB", image_url=None, thumbnail_url=None, created_by=user.id, team_id=team.id)
 
-    now = datetime.utcnow()
+    now = datetime.now(timezone.utc)
     older = now - timedelta(minutes=10)
 
     n1 = player_models.PlayerNews(player_id=player.id, author_id=user.id, summary="S1", text="T1", created_at=older)
@@ -93,7 +93,7 @@ def test_news_crud_and_latest(db_session):
 
     news_list = repo.list_news_for_player(db_session, player_id=player.id)
     assert len(news_list) == 2
-    # list_news_for_player orders by created_at desc
+    # list_news_for_player ordena por created_at desc
     assert news_list[0].summary == "S2"
 
     latest = repo.get_latest_news_for_player(db_session, player_id=player.id)

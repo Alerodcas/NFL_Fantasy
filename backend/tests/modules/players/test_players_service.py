@@ -22,7 +22,7 @@ def db_session():
     engine = create_engine("sqlite:///:memory:", echo=False)
     TestingSessionLocal = sessionmaker(bind=engine)
 
-    # Import related models so metadata registers required tables and FKs
+    # Importar modelos relacionados para que metadata registre las tablas y claves foráneas requeridas
     _ = (
         user_models.User,
         team_models.Team,
@@ -37,20 +37,20 @@ def db_session():
     session.close()
 
 
-# Use centralized factories
+# Usar factories centralizadas
 
 
 def test_create_player_assigns_thumbnail_when_image(monkeypatch, db_session):
     user = create_user(db_session)
     team = create_team(db_session, created_by=user.id)
 
-    # Patch try_download_and_thumb to return a thumb URL
+    # Parchear try_download_and_thumb para devolver una URL de thumbnail
     monkeypatch.setattr(svc, "try_download_and_thumb", lambda url, subdir=None: "/thumb.png")
 
     payload = schemas.PlayerCreate(name="  John  ", position="QB", team_id=team.id, image_url="http://img")
     player = svc.create_player(db_session, payload=payload, created_by=user.id)
 
-    # flush to assign PKs if needed (not required for attribute assertions)
+    # flush para asignar PKs si es necesario (no requerido para aserciones de atributos)
     db_session.flush()
 
     assert player.name == "John"
@@ -63,11 +63,11 @@ def test_process_players_batch_success(monkeypatch, db_session):
     user = create_user(db_session)
     team = create_team(db_session, created_by=user.id)
 
-    # Prepare sample input and validators
+    # Preparar entrada de ejemplo y validadores
     sample = [{"name": "P1", "position": "RB", "team_id": team.id, "image_url": None}]
     fileobj = io.BytesIO(json.dumps(sample).encode("utf-8"))
 
-    # validators.validate_players_batch returns list of dicts (validated items)
+    # validators.validate_players_batch devuelve una lista de dicts (elementos validados)
     monkeypatch.setattr(svc, "validators", type("V", (), {"validate_players_batch": staticmethod(lambda db, data: data)}))
 
     saved = {}
@@ -105,7 +105,7 @@ def test_create_player_news_updates_player_visible_designation(monkeypatch, db_s
     db_session.commit()
     db_session.refresh(player)
 
-    # Prepare a validated payload dict that validators.validate_player_news would return
+    # Preparar un dict validado que validators.validate_player_news devolvería
     validated = {
         "player_id": player.id,
         "summary": " s ",
@@ -116,7 +116,7 @@ def test_create_player_news_updates_player_visible_designation(monkeypatch, db_s
     }
 
     monkeypatch.setattr(svc, "validators", type("V", (), {"validate_player_news": staticmethod(lambda db, payload: validated)}))
-    # repository.get_by_id should return the player instance
+    # repository.get_by_id debe devolver la instancia del jugador
     monkeypatch.setattr(svc, "repository", type("R", (), {"get_by_id": staticmethod(lambda db, player_id: db.get(player_models.Player, player_id))}))
 
     payload = schemas.PlayerNewsCreate(**{
@@ -130,8 +130,8 @@ def test_create_player_news_updates_player_visible_designation(monkeypatch, db_s
 
     news = svc.create_player_news(db_session, payload=payload, author_id=user.id)
 
-    # news was added to session
+    # la noticia fue añadida a la sesión
     assert news.summary == "s"
-    # player's visible designation updated
+    # designación visible del jugador actualizada
     assert getattr(player, "visible_designation", None) == "D"
     assert getattr(player, "visible_designation_updated_at", None) is not None

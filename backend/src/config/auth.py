@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Optional
 from jose import JWTError, jwt
 from passlib.context import CryptContext
@@ -25,9 +25,9 @@ def get_password_hash(password: str) -> str:
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
     to_encode = data.copy()
     if expires_delta:
-        expire = datetime.utcnow() + expires_delta
+        expire = datetime.now(timezone.utc) + expires_delta
     else:
-        expire = datetime.utcnow() + timedelta(hours=24)
+        expire = datetime.now(timezone.utc) + timedelta(hours=24)
     
     to_encode.update({"exp": expire})
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
@@ -62,15 +62,15 @@ def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(
     
     # Validar inactividad de 12 horas
     if user.last_activity:
-        inactive_time = datetime.utcnow() - user.last_activity
+        inactive_time = datetime.now(timezone.utc) - user.last_activity
         if inactive_time > timedelta(hours=INACTIVITY_TIMEOUT_HOURS):
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Sesión expirada por inactividad"
             )
     
-    # Actualizar última actividad con cada petición
-    user.last_activity = datetime.utcnow()
+    # Actualizar última actividad con cada petición (timezone-aware UTC)
+    user.last_activity = datetime.now(timezone.utc)
     db.commit()
     
     return user

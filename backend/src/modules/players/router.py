@@ -36,7 +36,7 @@ def create_player_json(
         raise HTTPException(status_code=422, detail="image_url is required for JSON payload")
     # Validate payload before calling service
     try:
-        validated = validators.validate_single_player(db=db, payload=payload.dict())
+        validated = validators.validate_single_player(db=db, payload=payload.model_dump())
     except ValueError as ve:
         error_msg = str(ve)
         low = error_msg.lower()
@@ -77,7 +77,7 @@ def create_player_upload(
         payload = PlayerCreate(name=name, position=position, team_id=team_id, image_url=None)
         # Validate using validators with the uploaded file
         try:
-            validated = validators.validate_single_player(db=db, payload=payload.dict(), uploaded_file=image)
+            validated = validators.validate_single_player(db=db, payload=payload.model_dump(), uploaded_file=image)
         except ValueError as ve:
             error_msg = str(ve)
             low = error_msg.lower()
@@ -185,7 +185,7 @@ def create_player_news(
     _require_admin(current_user)
 
     # Ensure path player_id overrides any body value
-    payload = PlayerNewsCreate(**{**payload.dict(), "player_id": player_id})
+    payload = PlayerNewsCreate(**{**payload.model_dump(), "player_id": player_id})
 
     try:
         news = service.create_player_news(db=db, payload=payload, author_id=current_user.id)

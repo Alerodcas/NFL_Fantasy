@@ -3,7 +3,7 @@ from fastapi import APIRouter, Depends, HTTPException, status, Request
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 from jose import jwt
-from datetime import timedelta, datetime
+from datetime import timedelta, datetime, timezone
 
 from config.database import get_db
 from config import auth as security
@@ -121,8 +121,8 @@ def login(login_data: schemas.LoginRequest, db: Session = Depends(get_db)):
     try:
         user = service.authenticate_user(db, login_data.email, login_data.password, max_attempts=5)
         
-        # Login exitoso: actualizar actividad
-        user.last_activity = datetime.utcnow()
+        # Login exitoso: actualizar actividad (timezone-aware UTC)
+        user.last_activity = datetime.now(timezone.utc)
         db.commit()
         
         # Token de larga duración (24h), inactividad controlada por last_activity

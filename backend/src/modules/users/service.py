@@ -1,6 +1,6 @@
 from typing import Optional
 from sqlalchemy.orm import Session
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from config import auth as security
 from . import models, schemas, repository
 
@@ -48,7 +48,7 @@ def authenticate_user(db: Session, email: str, password: str, *, max_attempts: i
     
     # Success: reset failed attempts and update last activity
     user.failed_login_attempts = 0
-    user.last_activity = datetime.utcnow()
+    user.last_activity = datetime.now(timezone.utc)
     db.commit()
     
     return user
