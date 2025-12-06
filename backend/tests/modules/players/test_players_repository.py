@@ -1,7 +1,7 @@
 import pytest
 from datetime import datetime, timedelta, timezone
 
-from modules.players import repository as repo
+from modules.players import repository as repo, models as player_models
 from helpers.factories import create_user, create_team
 
 

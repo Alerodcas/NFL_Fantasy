@@ -6,6 +6,7 @@ import pytest
 
 from modules.players import service as svc
 from modules.players import schemas as schemas
+from modules.players import models as player_models
 from helpers.factories import create_user, create_team
 
 
