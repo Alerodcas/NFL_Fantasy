@@ -3,41 +3,11 @@ import json
 from datetime import datetime
 
 import pytest
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
 
 from modules.players import service as svc
 from modules.players import schemas as schemas
-from modules.users import models as user_models
-from modules.teams import models as team_models
-from helpers.factories import create_user, create_team
 from modules.players import models as player_models
-from modules.fantasy_teams import models as fantasy_team_models
-from modules.leagues import models as league_models
-from config.database import Base
-
-
-@pytest.fixture
-def db_session():
-    engine = create_engine("sqlite:///:memory:", echo=False)
-    TestingSessionLocal = sessionmaker(bind=engine)
-
-    # Importar modelos relacionados para que metadata registre las tablas y claves foráneas requeridas
-    _ = (
-        user_models.User,
-        team_models.Team,
-        league_models.League,
-        fantasy_team_models.FantasyTeam,
-        player_models.Player,
-        player_models.PlayerNews,
-    )
-    Base.metadata.create_all(bind=engine)
-    session = TestingSessionLocal()
-    yield session
-    session.close()
-
-
-# Usar factories centralizadas
+from helpers.factories import create_user, create_team
 
 
 def test_create_player_assigns_thumbnail_when_image(monkeypatch, db_session):
@@ -45,11 +15,13 @@ def test_create_player_assigns_thumbnail_when_image(monkeypatch, db_session):
     team = create_team(db_session, created_by=user.id)
 
     # Parchear try_download_and_thumb para devolver una URL de thumbnail
+    # Parchear try_download_and_thumb para devolver una URL de thumbnail
     monkeypatch.setattr(svc, "try_download_and_thumb", lambda url, subdir=None: "/thumb.png")
 
     payload = schemas.PlayerCreate(name="  John  ", position="QB", team_id=team.id, image_url="http://img")
     player = svc.create_player(db_session, payload=payload, created_by=user.id)
 
+    # flush para asignar PKs si es necesario (no requerido para aserciones de atributos)
     # flush para asignar PKs si es necesario (no requerido para aserciones de atributos)
     db_session.flush()
 
@@ -64,9 +36,11 @@ def test_process_players_batch_success(monkeypatch, db_session):
     team = create_team(db_session, created_by=user.id)
 
     # Preparar entrada de ejemplo y validadores
+    # Preparar entrada de ejemplo y validadores
     sample = [{"name": "P1", "position": "RB", "team_id": team.id, "image_url": None}]
     fileobj = io.BytesIO(json.dumps(sample).encode("utf-8"))
 
+    # validators.validate_players_batch devuelve una lista de dicts (elementos validados)
     # validators.validate_players_batch devuelve una lista de dicts (elementos validados)
     monkeypatch.setattr(svc, "validators", type("V", (), {"validate_players_batch": staticmethod(lambda db, data: data)}))
 
@@ -106,6 +80,7 @@ def test_create_player_news_updates_player_visible_designation(monkeypatch, db_s
     db_session.refresh(player)
 
     # Preparar un dict validado que validators.validate_player_news devolvería
+    # Preparar un dict validado que validators.validate_player_news devolvería
     validated = {
         "player_id": player.id,
         "summary": " s ",
@@ -116,6 +91,7 @@ def test_create_player_news_updates_player_visible_designation(monkeypatch, db_s
     }
 
     monkeypatch.setattr(svc, "validators", type("V", (), {"validate_player_news": staticmethod(lambda db, payload: validated)}))
+    # repository.get_by_id debe devolver la instancia del jugador
     # repository.get_by_id debe devolver la instancia del jugador
     monkeypatch.setattr(svc, "repository", type("R", (), {"get_by_id": staticmethod(lambda db, player_id: db.get(player_models.Player, player_id))}))
 
@@ -131,7 +107,9 @@ def test_create_player_news_updates_player_visible_designation(monkeypatch, db_s
     news = svc.create_player_news(db_session, payload=payload, author_id=user.id)
 
     # la noticia fue añadida a la sesión
+    # la noticia fue añadida a la sesión
     assert news.summary == "s"
+    # designación visible del jugador actualizada
     # designación visible del jugador actualizada
     assert getattr(player, "visible_designation", None) == "D"
     assert getattr(player, "visible_designation_updated_at", None) is not None
