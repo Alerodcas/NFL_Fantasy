@@ -1,33 +1,8 @@
 import pytest
-from sqlalchemy import create_engine
 from datetime import date
-from sqlalchemy.orm import sessionmaker
 
 from modules.leagues import repository as repo, models as league_models
 from modules.users import models as user_models
-from modules.teams import models as team_models
-from modules.fantasy_teams import models as fantasy_team_models
-from config.database import Base
-
-
-@pytest.fixture
-def db_session():
-    engine = create_engine("sqlite:///:memory:", echo=False)
-    TestingSessionLocal = sessionmaker(bind=engine)
-
-    # importar modelos relacionados para que las tablas se registren (teams, fantasy_teams, users)
-    _ = (
-        user_models.User,
-        team_models.Team,
-        fantasy_team_models.FantasyTeam,
-        league_models.Season,
-    )
-    # crear las tablas en la base de datos de prueba
-    Base.metadata.create_all(bind=engine)
-
-    session = TestingSessionLocal()
-    yield session
-    session.close()
 
 
 def test_get_current_season(db_session):

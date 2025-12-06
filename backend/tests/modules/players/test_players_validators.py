@@ -3,38 +3,8 @@ import io
 import json
 from datetime import datetime, date
 
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
-
 from modules.players import validators as val
-from modules.players import models as player_models
-from modules.teams import models as team_models
-from modules.users import models as user_models
-from modules.leagues import models as league_models
-from modules.fantasy_teams import models as fantasy_team_models
-from config.database import Base
 from helpers.factories import create_user, create_team, create_player, create_season, create_league, create_fantasy_team
-
-
-@pytest.fixture
-def db_session():
-    engine = create_engine("sqlite:///:memory:", echo=False)
-    TestingSessionLocal = sessionmaker(bind=engine)
-
-    # Registrar modelos involucrados en las comprobaciones de los validadores
-    _ = (
-        user_models.User,
-        team_models.Team,
-        league_models.Season,
-        league_models.League,
-        fantasy_team_models.FantasyTeam,
-        player_models.Player,
-        player_models.PlayerNews,
-    )
-    Base.metadata.create_all(bind=engine)
-    session = TestingSessionLocal()
-    yield session
-    session.close()
 
 
 def test_validate_single_player_success(db_session):
