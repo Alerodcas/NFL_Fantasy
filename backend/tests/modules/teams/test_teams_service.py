@@ -1,4 +1,6 @@
 import pytest
+from pydantic import ValidationError
+
 from modules.teams import service as svc, schemas
 from helpers.factories import create_user, create_team
 
@@ -50,23 +52,21 @@ def test_create_team_without_image(db_session):
 
 
 def test_create_team_name_too_short(db_session):
-    """Test that creating a team with name < 2 chars fails."""
+    """Test that creating a team with name < 2 chars fails at Pydantic validation."""
     user = create_user(db_session)
 
-    payload = schemas.TeamCreate(name="X", city="City", image_url=None)
-
-    with pytest.raises(ValueError, match="at least 2 characters"):
-        svc.create_team(db_session, payload=payload, created_by=user.id)
+    # Pydantic validation will raise ValidationError before the service is even called
+    with pytest.raises(ValidationError):
+        schemas.TeamCreate(name="X", city="City", image_url=None)
 
 
 def test_create_team_city_too_short(db_session):
-    """Test that creating a team with city < 2 chars fails."""
+    """Test that creating a team with city < 2 chars fails at Pydantic validation."""
     user = create_user(db_session)
 
-    payload = schemas.TeamCreate(name="Team", city="X", image_url=None)
-
-    with pytest.raises(ValueError, match="at least 2 characters"):
-        svc.create_team(db_session, payload=payload, created_by=user.id)
+    # Pydantic validation will raise ValidationError before the service is even called
+    with pytest.raises(ValidationError):
+        schemas.TeamCreate(name="Team", city="X", image_url=None)
 
 
 def test_create_team_duplicate_name_case_insensitive(db_session):
