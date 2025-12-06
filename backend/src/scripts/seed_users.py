@@ -5,7 +5,7 @@ Creates:
   - manager@nflfantasy.local / Manager1234 (role: manager)
   - user@nflfantasy.local / User1234 (role: user)
 """
-from datetime import datetime
+from datetime import datetime, timezone
 
 from ..config.database import SessionLocal
 from ..config.auth import get_password_hash
@@ -53,7 +53,7 @@ def seed_users():
                 hashed_password=get_password_hash(u["password"]),
                 role=u["role"],
                 account_status="active",
-                created_at=datetime.utcnow(),
+                created_at=datetime.now(timezone.utc),
             )
             db.add(user)
             created += 1

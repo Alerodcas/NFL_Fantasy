@@ -1,13 +1,5 @@
-import sys
-from pathlib import Path
 from types import SimpleNamespace
-from datetime import datetime
-
-# Ensure `backend/src` is on sys.path before importing application packages
-ROOT = Path(__file__).resolve().parents[3]
-SRC_PATH = str(ROOT / "src")
-if SRC_PATH not in sys.path:
-    sys.path.insert(0, SRC_PATH)
+from datetime import datetime, timezone
 
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
@@ -19,7 +11,7 @@ def make_app():
     app = FastAPI()
     app.include_router(router_mod.router)
 
-    # Override dependencies with simple stubs
+    # Sobrescribir dependencias con stubs simples
     app.dependency_overrides[router_mod.get_db] = lambda: None
     app.dependency_overrides[router_mod.get_current_user] = lambda: SimpleNamespace(id=1)
     return app
@@ -47,7 +39,7 @@ def test_search_leagues_success(monkeypatch):
     app = make_app()
     client = TestClient(app)
 
-    # Prepare a fake service response
+    # Preparar una respuesta falsa del servicio
     fake_result = [
         {
             "id": 1,
@@ -59,7 +51,7 @@ def test_search_leagues_success(monkeypatch):
             "season_id": 1,
             "season_name": "S2025",
             "slots_available": 3,
-            "created_at": datetime.utcnow().isoformat(),
+            "created_at": datetime.now(timezone.utc).isoformat(),
         }
     ]
 
@@ -76,7 +68,7 @@ def test_create_league_success(monkeypatch):
     app = make_app()
     client = TestClient(app)
 
-    # Mock the service to return fake league and team
+    # Mockear el servicio para devolver liga y equipo falsos
     fake_league = SimpleNamespace(
         id=10,
         uuid="uuid-10",
@@ -113,8 +105,8 @@ def test_join_league_success(monkeypatch):
     app = make_app()
     client = TestClient(app)
 
-    # Fake member returned by the service
-    fake_member = SimpleNamespace(league_id=5, fantasy_team_id=55, user_alias="mi_alias", joined_at=datetime.utcnow())
+    # Miembro falso devuelto por el servicio
+    fake_member = SimpleNamespace(league_id=5, fantasy_team_id=55, user_alias="mi_alias", joined_at=datetime.now(timezone.utc))
     monkeypatch.setattr(router_mod, "svc_join_league", lambda **kwargs: fake_member)
     monkeypatch.setattr(router_mod.audit, "log_event", lambda *args, **kwargs: None)
 
@@ -135,7 +127,7 @@ def test_upload_fantasy_team_image(monkeypatch):
     app = make_app()
     client = TestClient(app)
 
-    # Mock media_repo.save_upload
+    # Mockear media_repo.save_upload
     monkeypatch.setattr(router_mod.media_repo, "save_upload", lambda file, path: ("/media/img.png", "/media/thumb.png"))
 
     files = {"image": ("img.png", b"abc", "image/png")}

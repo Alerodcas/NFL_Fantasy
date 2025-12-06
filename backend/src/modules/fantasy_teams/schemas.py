@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field, HttpUrl
+from pydantic import BaseModel, Field, HttpUrl, ConfigDict
 from typing import Annotated, Optional
 from datetime import datetime
 
@@ -16,5 +16,4 @@ class FantasyTeam(BaseModel):
     user_id: int
     league_id: int
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)

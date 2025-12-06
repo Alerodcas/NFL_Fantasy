@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 from typing import Annotated, Optional
 from datetime import datetime
 
@@ -30,5 +30,4 @@ class Team(BaseModel):
     created_at: datetime
     created_by: int
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)

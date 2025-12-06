@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field, HttpUrl, field_validator
+from pydantic import BaseModel, Field, HttpUrl, field_validator, ConfigDict
 from typing import Annotated, Optional, Literal
 from datetime import datetime
 
@@ -22,8 +22,7 @@ class Player(BaseModel):
     created_by: int
     team_id: int
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 # Player news schemas
@@ -58,5 +57,4 @@ class PlayerNewsOut(BaseModel):
     changes: Optional[dict]
     created_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)

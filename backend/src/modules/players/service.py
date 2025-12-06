@@ -10,7 +10,7 @@ import uuid
 import os
 from pathlib import Path
 import json
-from datetime import datetime
+from datetime import datetime, timezone
 from sqlalchemy.exc import IntegrityError
 from contextlib import nullcontext
 
@@ -139,7 +139,7 @@ def create_player_news(db: Session, *, payload: schemas.PlayerNewsCreate, author
     """Create a PlayerNews instance (does not commit). Validates player existence and activity."""
     # Validate DB-level requirements
     try:
-        validated = validators.validate_player_news(db=db, payload=payload.dict())
+        validated = validators.validate_player_news(db=db, payload=payload.model_dump())
     except ValueError as ve:
         raise ve
 
@@ -170,8 +170,8 @@ def create_player_news(db: Session, *, payload: schemas.PlayerNewsCreate, author
             player_visible = news.injury_type if news.is_injury else None
             player.visible_designation = player_visible
             # Use server-side timestamp on commit; also set a client-side timestamp for immediate readback
-            from datetime import datetime
-            player.visible_designation_updated_at = datetime.utcnow()
+            # Use timezone-aware UTC timestamp for consistency
+            player.visible_designation_updated_at = datetime.now(timezone.utc)
     except Exception:
         # Do not fail creation if we can't update player visible fields; leave unhandled
         pass

@@ -1,12 +1,3 @@
-import sys
-from pathlib import Path
-
-# Asegura que `backend/src` esté en `sys.path` antes de importar los paquetes de la aplicación
-ROOT = Path(__file__).resolve().parents[3]
-SRC_PATH = str(ROOT / "src")
-if SRC_PATH not in sys.path:
-    sys.path.insert(0, SRC_PATH)
-
 import pytest
 from sqlalchemy import create_engine
 from datetime import date
@@ -123,3 +114,4 @@ def test_name_exists(db_session):
 
     assert repo.name_exists(db_session, "Alpha League") is True
     assert repo.name_exists(db_session, "NonExistent") is False
+

@@ -1,4 +1,4 @@
-from pydantic import BaseModel, EmailStr, Field, field_validator
+from pydantic import BaseModel, EmailStr, Field, field_validator, ConfigDict
 from typing import Annotated
 from core.validators import validate_password
 
@@ -23,8 +23,7 @@ class User(BaseModel):
     role: str
     account_status: str
     
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 # Esquema para actualizar el perfil del usuario
 class UserUpdate(BaseModel):
@@ -54,8 +53,7 @@ class LoginResponse(BaseModel):
     token_type: str = "bearer"
     user_id: int
     
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 class MessageResponse(BaseModel):
     message: str

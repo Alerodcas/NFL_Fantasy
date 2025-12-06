@@ -1,10 +1,10 @@
-from sqlalchemy import Column, Integer, BigInteger, String, Boolean, DateTime, func, ForeignKey, Index, text
+from sqlalchemy import Column, Integer, String, Boolean, DateTime, func, ForeignKey, Index, text
 from config.database import Base
 
 class Team(Base):
     __tablename__ = "teams"
 
-    id = Column(BigInteger, primary_key=True, index=True)
+    id = Column(Integer, primary_key=True, index=True)
     name = Column(String(128), nullable=False)         # DB has CITEXT UNIQUE(name)
     city = Column(String(128), nullable=False)
     image_url = Column(String(512), nullable=True)
