@@ -1,35 +1,6 @@
 import pytest
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
 
 from modules.fantasy_teams import repository, models
-from modules.leagues import models as League
-from config.database import Base
-
-from modules.teams import models as TeamModels
-from modules.users import models as UserModels
-
-
-# -----------------------
-# FIXTURES
-# -----------------------
-
-@pytest.fixture
-def db_session():
-    """Crea una BD temporal en memoria para cada test."""
-    engine = create_engine("sqlite:///:memory:", echo=False)
-    TestingSessionLocal = sessionmaker(bind=engine)
-
-    # Importar modelos relacionados para cargar metadata
-    _ = League.League
-    
-
-    # Crear tablas
-    Base.metadata.create_all(bind=engine)
-
-    session = TestingSessionLocal()
-    yield session
-    session.close()
 
 
 @pytest.fixture

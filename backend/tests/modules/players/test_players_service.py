@@ -3,41 +3,10 @@ import json
 from datetime import datetime
 
 import pytest
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
 
 from modules.players import service as svc
 from modules.players import schemas as schemas
-from modules.users import models as user_models
-from modules.teams import models as team_models
 from helpers.factories import create_user, create_team
-from modules.players import models as player_models
-from modules.fantasy_teams import models as fantasy_team_models
-from modules.leagues import models as league_models
-from config.database import Base
-
-
-@pytest.fixture
-def db_session():
-    engine = create_engine("sqlite:///:memory:", echo=False)
-    TestingSessionLocal = sessionmaker(bind=engine)
-
-    # Importar modelos relacionados para que metadata registre las tablas y claves foráneas requeridas
-    _ = (
-        user_models.User,
-        team_models.Team,
-        league_models.League,
-        fantasy_team_models.FantasyTeam,
-        player_models.Player,
-        player_models.PlayerNews,
-    )
-    Base.metadata.create_all(bind=engine)
-    session = TestingSessionLocal()
-    yield session
-    session.close()
-
-
-# Usar factories centralizadas
 
 
 def test_create_player_assigns_thumbnail_when_image(monkeypatch, db_session):

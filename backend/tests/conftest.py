@@ -17,3 +17,47 @@ if str(SRC) not in sys.path:
 TESTS_DIR = str(Path(__file__).resolve().parent)
 if TESTS_DIR not in sys.path:
     sys.path.insert(0, TESTS_DIR)
+
+import pytest
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
+
+# Import all models to ensure they're registered with metadata
+from modules.users import models as user_models
+from modules.teams import models as team_models
+from modules.players import models as player_models
+from modules.fantasy_teams import models as fantasy_team_models
+from modules.leagues import models as league_models
+from config.database import Base
+from helpers.factories import create_user
+
+
+@pytest.fixture
+def db_session():
+    """
+    Provides a fresh in-memory SQLite database for each test.
+    
+    This fixture:
+    - Creates tables based on all imported models
+    - Provides a clean session for testing
+    - Automatically cleans up after the test
+    """
+    engine = create_engine("sqlite:///:memory:", echo=False)
+    TestingSessionLocal = sessionmaker(bind=engine)
+
+    Base.metadata.create_all(bind=engine)
+
+    session = TestingSessionLocal()
+    yield session
+    session.close()
+
+
+@pytest.fixture
+def test_user(db_session):
+    """
+    Creates a test user for use in tests.
+    
+    Provides a convenient way to get a user with default values
+    for tests that need foreign key references.
+    """
+    return create_user(db_session)
