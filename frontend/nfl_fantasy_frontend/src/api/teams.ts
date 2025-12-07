@@ -1,9 +1,4 @@
-import axios from "axios";
-import { API_BASE } from "../config/server";
-
-const api = axios.create({
-  baseURL: API_BASE,
-});
+import api from "./apiService";
 
 export type CreateTeamPayload = {
   name: string;
